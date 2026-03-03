@@ -946,7 +946,6 @@ void setInput()
                 if (newinput > (1000 + (servo_dead_band << 1))) {
                     if (forward == eepromBuffer.dir_reversed) {
                         adjusted_input = 0;
-         //               if (running) {
                         prop_brake_active = 1;
                         if (return_to_center) {
                             forward = 1 - eepromBuffer.dir_reversed;
