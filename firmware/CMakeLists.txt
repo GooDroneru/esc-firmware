@@ -8,7 +8,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_DIR}")
 #   K1921VK035  — NIIET ARM Cortex-M4F
 #   CH32V203    — WCH RISC-V  (reserved, not yet implemented)
 # ---------------------------------------------------------------------------
-set(MCU_PLATFORM "K1921VK035" CACHE STRING "Target MCU platform: K1921VK035 or CH32V203")
+set(MCU_PLATFORM "CH32V203" CACHE STRING "Target MCU platform: K1921VK035 or CH32V203")
 set_property(CACHE MCU_PLATFORM PROPERTY STRINGS "K1921VK035" "CH32V203")
 
 if(MCU_PLATFORM STREQUAL "CH32V203")
@@ -29,6 +29,7 @@ project(esc-firmware VERSION 2.0 LANGUAGES C ASM)
 # Platform SDK
 # ---------------------------------------------------------------------------
 if(MCU_PLATFORM STREQUAL "CH32V203")
+    set(CH32_OVERRIDE_SYSTEM ON CACHE BOOL "Use project-local system_ch32v20x.c instead of SDK's" FORCE)
     add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/../../dependencies/ch32sdk ch32sdk)
 elseif(MCU_PLATFORM STREQUAL "K1921VK035")
     add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/../../dependencies/niietsdk niietsdk)
@@ -37,34 +38,41 @@ endif()
 # ---------------------------------------------------------------------------
 # Targets
 # ---------------------------------------------------------------------------
+
+# Common include directories shared by all MCU targets
+set(ESC_COMMON_INCLUDE_DIRS
+    ${CMAKE_CURRENT_SOURCE_DIR}/inc
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../dependencies/common
+)
+
 if(MCU_PLATFORM STREQUAL "K1921VK035")
 
     add_executable(esc-firmware-niiet)
 
     target_sources(esc-firmware-niiet
         PRIVATE
-            Src/main.c
-            Src/dshot.c
-            Src/firmwareversion.c
-            Src/functions.c
-            Src/signal.c
-            Src/sounds.c
-            Src/kiss_telemetry.c
-            Mcu/K19XXVK035/Src/ADC.c
-            Mcu/K19XXVK035/Src/comparator.c
-            Mcu/K19XXVK035/Src/eeprom.c
-            Mcu/K19XXVK035/Src/IO.c
-            Mcu/K19XXVK035/Src/phaseouts.c
-            Mcu/K19XXVK035/Src/serial_telemetry.c
-            Mcu/K19XXVK035/Src/K19xxVK035_it.c
-            Mcu/K19XXVK035/Src/peripherals.c
+            src/main.c
+            src/dshot.c
+            src/firmwareversion.c
+            src/functions.c
+            src/signal.c
+            src/sounds.c
+            src/kiss_telemetry.c
+            mcu/k19xxvk035/Src/ADC.c
+            mcu/k19xxvk035/Src/comparator.c
+            mcu/k19xxvk035/Src/eeprom.c
+            mcu/k19xxvk035/Src/IO.c
+            mcu/k19xxvk035/Src/phaseouts.c
+            mcu/k19xxvk035/Src/serial_telemetry.c
+            mcu/k19xxvk035/Src/K19xxVK035_it.c
+            mcu/k19xxvk035/Src/peripherals.c
     )
 
     target_include_directories(esc-firmware-niiet
         PRIVATE
             ${CMAKE_CURRENT_SOURCE_DIR}
-            ${CMAKE_CURRENT_SOURCE_DIR}/Inc
-            ${CMAKE_CURRENT_SOURCE_DIR}/Mcu/K19XXVK035/Inc
+            ${ESC_COMMON_INCLUDE_DIRS}
+            ${CMAKE_CURRENT_SOURCE_DIR}/mcu/k19xxvk035/Inc
     )
 
     target_link_libraries(esc-firmware-niiet
@@ -102,28 +110,29 @@ elseif(MCU_PLATFORM STREQUAL "CH32V203")
 
     target_sources(esc-firmware-wch
         PRIVATE
-            Src/main.c
-            Src/dshot.c
-            Src/firmwareversion.c
-            Src/functions.c
-            Src/signal.c
-            Src/sounds.c
-            Src/kiss_telemetry.c
-            Mcu/CH32V203/Src/ADC.c
-            Mcu/CH32V203/Src/comparator.c
-            Mcu/CH32V203/Src/eeprom.c
-            Mcu/CH32V203/Src/IO.c
-            Mcu/CH32V203/Src/phaseouts.c
-            Mcu/CH32V203/Src/serial_telemetry.c
-            Mcu/CH32V203/Src/ch32v20x_it.c
-            Mcu/CH32V203/Src/peripherals.c
+            src/main.c
+            src/dshot.c
+            src/firmwareversion.c
+            src/functions.c
+            src/signal.c
+            src/sounds.c
+            src/kiss_telemetry.c
+            mcu/v203/Src/ADC.c
+            mcu/v203/Src/comparator.c
+            mcu/v203/Src/eeprom.c
+            mcu/v203/Src/IO.c
+            mcu/v203/Src/phaseouts.c
+            mcu/v203/Src/serial_telemetry.c
+            mcu/v203/Src/ch32v20x_it.c
+            mcu/v203/Src/peripherals.c
+            mcu/v203/Src/system_ch32v20x.c
     )
 
     target_include_directories(esc-firmware-wch
         PRIVATE
             ${CMAKE_CURRENT_SOURCE_DIR}
-            ${CMAKE_CURRENT_SOURCE_DIR}/Inc
-            ${CMAKE_CURRENT_SOURCE_DIR}/Mcu/CH32V203/Inc
+            ${ESC_COMMON_INCLUDE_DIRS}
+            ${CMAKE_CURRENT_SOURCE_DIR}/mcu/v203/Inc
     )
 
     target_link_libraries(esc-firmware-wch
@@ -149,7 +158,7 @@ elseif(MCU_PLATFORM STREQUAL "CH32V203")
         -Wl,--print-memory-usage
     )
 
-    set(ESC_WCH_LD_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/../../dependencies/ch32sdk/ld/esc_ch32v20x_D6.ld)
+    set(ESC_WCH_LD_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/../../dependencies/ch32sdk/ld/esc_ch32v20x_D6_app.ld)
     gcc_add_linker_script(esc-firmware-wch PRIVATE ${ESC_WCH_LD_SCRIPT})
     gcc_generate_hex_file(esc-firmware-wch)
     gcc_generate_bin_file(esc-firmware-wch)

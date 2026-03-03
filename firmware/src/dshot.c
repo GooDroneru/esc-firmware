@@ -93,6 +93,7 @@ __RAMFUNC void computeDshotDMA()
 					high_pin_count++;
                     if (high_pin_count > 100) {
 						dshot_telemetry = 1;
+#ifdef K19xxVK035
 						if(halfpulsetime > 0x72) {
 							periodTime = 256;
 							bitShift = 8;
@@ -103,6 +104,16 @@ __RAMFUNC void computeDshotDMA()
 							bitShift = 7;
 							IC_TIMER_REGISTER->PRD = periodTime;
 						}
+#elif defined(WCH)
+						if(halfpulsetime > 0x39) {
+							periodTime = 64;
+							bitShift = 6;
+						}
+						else {
+							periodTime = 32;
+							bitShift = 5;
+						}
+#endif
 					}
 				}
 			}
@@ -112,12 +123,6 @@ __RAMFUNC void computeDshotDMA()
 		}
 
         int tocheck = (dpulse[0] << 10 | dpulse[1] << 9 | dpulse[2] << 8 | dpulse[3] << 7 | dpulse[4] << 6 | dpulse[5] << 5 | dpulse[6] << 4 | dpulse[7] << 3 | dpulse[8] << 2 | dpulse[9] << 1 | dpulse[10]);
-
-		if(!armed) {
-			if(tocheck == 0x28) {
-				NVIC_SystemReset();
-			}
-		}
 
         if (calcCRC == checkCRC) {
 			signaltimeout = 0;
@@ -340,11 +345,22 @@ __RAMFUNC void make_dshot_package(uint16_t com_time)
 		<< 5 // 3rd set of four digits
         | gcr_encode_table[(((1 << 4) - 1) & (dshot_full_number >> 0))]; // last four digits
 	// GCR RLL encode 20 to 21bit output
+#ifdef MCU_K19xxVK035
     gcr[1 + buffer_padding] = periodTime;
+
     for (int i = 19; i >= 0; i--)
 	{ // each digit in gcrnumber
         gcr[buffer_padding + 20 - i + 1] = ((((gcrnumber & 1 << i)) >> i) ^ (gcr[buffer_padding + 20 - i] >> bitShift)) << bitShift; // exclusive ored with number before it multiplied by 64 to match
 		// output timer.
 	}
     gcr[buffer_padding] = 0;
+#elif defined(WCH)
+    gcr[1 + buffer_padding] = periodTime;
+    for (int i = 19; i >= 0; i--) { // each digit in gcrnumber
+        gcr[buffer_padding + 20 - i + 1] = ((((gcrnumber & 1 << i)) >> i) ^ (gcr[buffer_padding + 20 - i] >> bitShift))
+            << bitShift; // exclusive ored with number before it multiplied by 64 to match
+                  // output timer.
+		  }
+          gcr[buffer_padding] = 0;
+#endif
 }

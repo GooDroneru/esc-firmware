@@ -5,10 +5,9 @@
  *      Author: Alka
  */
 
-#include "main.h"
+#pragma once
 
-#ifndef INC_DSHOT_H_
-#define INC_DSHOT_H_
+#include "main.h"
 
 void computeDshotDMA(void);
 void make_dshot_package(uint16_t com_time);
@@ -27,4 +26,4 @@ extern uint32_t commutation_interval;
 
 // int e_com_time;
 
-#endif /* INC_DSHOT_H_ */
+

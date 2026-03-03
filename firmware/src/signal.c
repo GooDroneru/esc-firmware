@@ -48,7 +48,11 @@ void computeMSInput()
 
 __RAMFUNC void computeServoInput()
 {   
+#ifdef K19XXVK035
     uint16_t diffValue = (dma_buffer[1] - dma_buffer[0]) / 100;
+#elif defined WCH
+    uint16_t diffValue = (dma_buffer[1] - dma_buffer[0]);
+#endif
     if ((diffValue > 800) && (diffValue < 2200))
     {
         signaltimeout = 0;
@@ -204,20 +208,35 @@ __RAMFUNC void transfercomplete()
 
 void checkDshot()
 {   
+#ifdef K19XXVK035
     if ((smallestnumber >= 90) && (smallestnumber < 400) && (average_signal_pulse < 6000)) {
+#elif defined WCH
+    if ((smallestnumber >= 1) && (smallestnumber < 4) && (average_signal_pulse < 60)) {
+
+        ic_timer_prescaler = 0;
+        if (CPU_FREQUENCY_MHZ > 100) {
+            output_timer_prescaler = 1;
+        } else {
+            output_timer_prescaler = 0;
+        }
+#endif
         dshot = 1;
         buffer_padding = 14;
         buffersize = 32;
         inputSet = 1;
     }
+#ifdef K19XXVK035
     if ((smallestnumber >= 10) && (smallestnumber <= 80) && (average_signal_pulse < 1000)) {
+#elif defined WCH
+    if ((smallestnumber >= 4) && (smallestnumber <= 8) && (average_signal_pulse < 100)) {
+    ic_timer_prescaler = 1;
+    if (CPU_FREQUENCY_MHZ > 100) {
+        output_timer_prescaler = 3;
+    } else {
+        output_timer_prescaler = 1;
+    }
+#endif
         dshot = 1;
-        ic_timer_prescaler = 1;
-        if (CPU_FREQUENCY_MHZ > 100) {
-            output_timer_prescaler = 3;
-        } else {
-            output_timer_prescaler = 1;
-        }
         buffer_padding = 7;
         buffersize = 32;
         inputSet = 1;
@@ -225,17 +244,26 @@ void checkDshot()
 }
 void checkServo()
 {
+#ifdef K19XX035
     if (smallestnumber > 2000 && smallestnumber < 210000) {
+    buffersize = 4;
+#elif defined WCH
+    if (smallestnumber > 200 && smallestnumber < 21000) {
+    buffersize = 2;
+    ic_timer_prescaler = CPU_FREQUENCY_MHZ - 1;
+#endif
         servoPwm = 1;
-        //ic_timer_prescaler = CPU_FREQUENCY_MHZ - 1;
-        buffersize = 4;
         inputSet = 1;
     }
 }
 
 __RAMFUNC void detectInput()
 {   
+#ifdef K19XX035
     smallestnumber = 2000000;
+#elif defined WCH
+    smallestnumber = 20000;
+#endif
     average_signal_pulse = 0;
     int lastnumber = dma_buffer[0];
     for (int j = 1; j < 31; j++) {

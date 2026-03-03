@@ -5,8 +5,7 @@
  *      Author: Alka
  */
 
-#ifndef FUNCTIONS_H_
-#define FUNCTIONS_H_
+#pragma once
 
 #include "main.h"
 #include "targets.h"
@@ -24,4 +23,3 @@ void gpio_mode_QUICK(gpio_type* gpio_periph, uint32_t mode,
 void gpio_mode_set(gpio_type* gpio_periph, uint32_t mode, uint32_t pull_up_down,
     uint32_t pin);
 #endif
-#endif /* FUNCTIONS_H_ */

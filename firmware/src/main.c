@@ -232,6 +232,7 @@ an settings option)
 #include <stdint.h>
 #include <string.h>
 #include <assert.h>
+#include "esc/esc_version.h"
 
 #ifdef USE_CRSF_INPUT
 #include "crsf.h"
@@ -336,17 +337,6 @@ char LOW_VOLTAGE_CUTOFF = 0; // Turn Low Voltage CUTOFF on or off
 uint16_t low_cell_volt_cutoff = 330; // 3.3volts per cell
 
 //=========================== END EEPROM Defaults ===========================
-
-#pragma pack (push, 1)
-typedef struct version_s {
-    uint8_t major;
-    uint8_t minor;
-}version_t;
-
-version_t firmware_version = {
-        .major = 1,
-        .minor = 6,
-};
 
 // move these to targets folder or peripherals for each mcu
 uint16_t ADC_CCR = 30;
@@ -562,7 +552,6 @@ char step = 1;
 uint32_t commutation_interval = 12500;
 uint16_t waitTime = 0;
 uint16_t signaltimeout = 0;
-uint8_t multirotor = 0;
 
 uint8_t ubAnalogWatchdogStatus = 0;
 
@@ -601,18 +590,18 @@ void loadEEpromSettings()
 
     read_flash_bin(eepromBuffer.buffer, eeprom_address, sizeof(eepromBuffer.buffer));
     //if(eepromBuffer.eeprom_version < EEPROM_VERSION){
-      eepromBuffer.max_ramp = 160;    // 0.1% per ms to 25% per ms 
-      eepromBuffer.minimum_duty_cycle = 0; // 0.2% to 51 percent
-      eepromBuffer.disable_stick_calibration = 0; // 
-      eepromBuffer.absolute_voltage_cutoff = 10;  // voltage level 1 to 100 in 0.5v increments
-      eepromBuffer.current_P = 100; // 0-255
-      eepromBuffer.current_I = 0; // 0-255
-      eepromBuffer.current_D = 100; // 0-255
-      eepromBuffer.active_brake_power = 0; // 1-5 percent duty cycle
-      eepromBuffer.reserved_eeprom_3[0] = 0; //14-16  for crsf input
-      eepromBuffer.reserved_eeprom_3[1] = 0;
-      eepromBuffer.reserved_eeprom_3[2] = 0;
-      eepromBuffer.reserved_eeprom_3[3] = 0;
+    //   eepromBuffer.max_ramp = 160;    // 0.1% per ms to 25% per ms 
+    //   eepromBuffer.minimum_duty_cycle = 0; // 0.2% to 51 percent
+    //   eepromBuffer.disable_stick_calibration = 0; // 
+    //   eepromBuffer.absolute_voltage_cutoff = 10;  // voltage level 1 to 100 in 0.5v increments
+    //   eepromBuffer.current_P = 100; // 0-255
+    //   eepromBuffer.current_I = 0; // 0-255
+    //   eepromBuffer.current_D = 100; // 0-255
+    //   eepromBuffer.active_brake_power = 0; // 1-5 percent duty cycle
+    //   eepromBuffer.reserved_eeprom_3[0] = 0; //14-16  for crsf input
+    //   eepromBuffer.reserved_eeprom_3[1] = 0;
+    //   eepromBuffer.reserved_eeprom_3[2] = 0;
+    //   eepromBuffer.reserved_eeprom_3[3] = 0;
     //}
     //eepromBuffer.motor_poles = 14; //TODO
     // eepromBuffer.advance_level can either be set to 0-3 with config tools less than 1.90 or 10-42 with 1.90 or above 
@@ -876,11 +865,6 @@ void commutate()
     }
     __enable_irq();
     changeCompInput();
-    if(!eepromBuffer.no_polling_start) {
-	if (average_interval > polling_mode_changeover + 500) {
-        old_routine = 1;
-    }
-    }
     bemfcounter = 0;
     zcfound = 0;
     commutation_intervals[step - 1] = commutation_interval; // just used to calulate average
@@ -1601,24 +1585,28 @@ void zcfoundroutine()
     bad_count = 0;
 
     zero_crosses++;
-#ifdef NO_POLLING_START     // changes to interrupt mode after 2 zero crosses, does not re-enter
+    if(eepromBuffer.no_polling_start) {
+// #ifdef NO_POLLING_START     // changes to interrupt mode after 2 zero crosses, does not re-enter
        if (zero_crosses > 2) {
             old_routine = 0;
             enableCompInterrupts();          // enable interrupt
         }
-#else
-    if (eepromBuffer.stall_protection || eepromBuffer.rc_car_reverse) {
-   	 if (zero_crosses >= 20 && commutation_interval <= 2000) {
-   	    	old_routine = 0;
-   	    	enableCompInterrupts();          // enable interrupt
     }
-    } else {
-       if (commutation_interval < polling_mode_changeover) {
-            old_routine = 0;
-            enableCompInterrupts();          // enable interrupt
+    else {
+// #else
+        if (eepromBuffer.stall_protection || eepromBuffer.rc_car_reverse) {
+        if (zero_crosses >= 20 && commutation_interval <= 2000) {
+                old_routine = 0;
+                enableCompInterrupts();          // enable interrupt
+        }
+        } else {
+        if (commutation_interval < polling_mode_changeover) {
+                old_routine = 0;
+                enableCompInterrupts();          // enable interrupt
+            }
         }
     }
- #endif
+//  #endif
 }
 #ifdef BRUSHED_MODE
 void runBrushedLoop()
@@ -1679,12 +1667,6 @@ void runBrushedLoop()
 }
 #endif
 
-typedef struct hardwareVersion_s
-{
-    version_t version;
-    char deviceId[12];
-} hardwareVersion_t;
-
 #ifdef BOOTLOADER
 extern const uint8_t __device_info_start[];
 extern const uint8_t __firmware_info_start[];
@@ -1696,12 +1678,7 @@ int main(void)
 
 #ifdef BOOTLOADER
     hardwareVersion_t hardwareInfo;
-    version_t __firmware_version;
-    read_flash_bin((uint8_t*)(&__firmware_version), (uint32_t)__firmware_info_start, sizeof(__firmware_version));
     read_flash_bin((uint8_t*)(&hardwareInfo), (uint32_t)__device_info_start, sizeof(hardwareInfo));
-    if((__firmware_version.major != firmware_version.major) || (__firmware_version.minor != firmware_version.minor)) {
-        save_flash_nolib((uint8_t*)(&firmware_version), sizeof(firmware_version), (uint32_t)__firmware_info_start);
-    }
     if(hardwareInfo.deviceId[4] == '8') //20R
     {
         deadTime = 30;
@@ -1709,11 +1686,6 @@ int main(void)
     else if(hardwareInfo.deviceId[3] == '1') //20R
     {
         deadTime = 60;
-    }
-
-
-    if(hardwareInfo.deviceId[11] == 'M') {
-        multirotor = 1;
     }
 
     gate_drive_offset = deadTime;
@@ -1727,19 +1699,23 @@ int main(void)
     initCorePeripherals();
     enableCorePeripherals();
     loadEEpromSettings();
-   //delayMillis(500);
 
+    if (FIRMWARE_VERSION_MAJOR != eepromBuffer.version.major || FIRMWARE_VERSION_MINOR != eepromBuffer.version.minor || EEPROM_VERSION > eepromBuffer.eeprom_version) {
+        eepromBuffer.version.major = FIRMWARE_VERSION_MAJOR;
+        eepromBuffer.version.minor = FIRMWARE_VERSION_MINOR;
+        eepromBuffer.eeprom_version = EEPROM_VERSION;
+        saveEEpromSettings();
+    }
+   //delayMillis(500);
+#ifdef MCU_K19xxVK035
     PWM0->DBRED = dead_time_override;
     PWM0->DBFED = dead_time_override;
     PWM1->DBRED = dead_time_override;
     PWM1->DBFED = dead_time_override;
     PWM2->DBRED = dead_time_override;
     PWM2->DBFED = dead_time_override;
+#endif
 
-    // if (eepromBuffer.use_sine_start) {
-        //    min_startup_duty = sin_mode_min_s_d;
-    // }
-    
     if (eepromBuffer.dir_reversed == 1) {
         forward = 0;
     } else {
@@ -1889,10 +1865,10 @@ e_com_time = ((commutation_intervals[0] + commutation_intervals[1] + commutation
     input_ready = 0;
     }
 #else
-        //if (input_ready) {
-            //processDshot();
-            //input_ready = 0;
-        //}
+    if (input_ready) {
+        processDshot();
+        input_ready = 0;
+    }
 #endif
 #endif
 if(zero_crosses < 5){
@@ -2044,14 +2020,26 @@ if(zero_crosses < 5){
            send_esc_info_flag = 0;
  	}
         if (PROCESS_ADC_FLAG == 1) { // for adc and telemetry set adc counter at 1khz loop rate
+#if defined(STMICRO)
+            ADC_DMA_Callback();
+            LL_ADC_REG_StartConversion(ADC1);
+#ifdef USE_ADC_1_2
+            LL_ADC_REG_StartConversion(ADC2);
+#endif
+            degrees_celsius = __LL_ADC_CALC_TEMPERATURE(3300, ADC_raw_temp, LL_ADC_RESOLUTION_12B);
+#endif
+#ifdef WCH
+            startADCConversion();
+            degrees_celsius = getConvertedDegrees(ADC_raw_temp);
+#endif
+#ifdef MCU_K19xxVK035
             ADC_DMA_Callback();
             ADC_SEQ_SwStartCmd();
             degrees_celsius = getConvertedDegrees(0);
+#endif
             battery_voltage = (/*(7 * battery_voltage) + */((ADC_raw_volts * 3300 / 4095 * VOLTAGE_DIVIDER) / 100))/* >> 3*/;
-            if(!multirotor) {
-                smoothed_raw_current = getSmoothedCurrent();
-                actual_current = ((smoothed_raw_current * 3300 / 41) - (CURRENT_OFFSET * 100)) / (MILLIVOLT_PER_AMP);
-            }
+            smoothed_raw_current = getSmoothedCurrent();
+            actual_current = ((smoothed_raw_current * 3300 / 41) - (CURRENT_OFFSET * 100)) / (MILLIVOLT_PER_AMP);
             if (actual_current < 0) {
                 actual_current = 0;
             }             

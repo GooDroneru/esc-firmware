@@ -1,7 +1,11 @@
-#include "main.h"
-#include "plib035_mflash.h"
-
 #pragma once
+
+#include "main.h"
+#ifdef K19XX035
+    #include "plib035_mflash.h"
+#endif
+
+#define EEPROM_VERSION 2
 
 typedef union EEprom_u {
     struct {

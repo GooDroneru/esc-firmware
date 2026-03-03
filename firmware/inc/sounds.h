@@ -5,8 +5,7 @@
  *      Author: Alka
  */
 
-#ifndef SOUNDS_H_
-#define SOUNDS_H_
+#pragma once
 
 #include "main.h"
 
@@ -22,5 +21,3 @@ void playChangedTone(void);
 void setVolume(uint8_t volume);
 
 extern void delayMillis(uint32_t millis);
-
-#endif /* SOUNDS_H_ */

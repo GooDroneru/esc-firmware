@@ -3,6 +3,12 @@
 
 #pragma once
 
+// Platforms that don't define __RAMFUNC (e.g. WCH RISC-V) get a no-op fallback.
+// NIIET SDK (plib035.h) defines it as __ramfunc / __attribute__((long_call,...))
+#ifndef __RAMFUNC
+#define __RAMFUNC
+#endif
+
 extern EEprom_t eepromBuffer;
 extern uint32_t eeprom_address;
 extern uint16_t TIMER1_MAX_ARR;

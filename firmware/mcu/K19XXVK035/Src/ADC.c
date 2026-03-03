@@ -8,21 +8,12 @@
 #include "ADC.h"
 #include "ntc_tables.h"
 #include "functions.h"
-#include "math.h"
 #ifdef USE_ADC
 #ifdef USE_ADC_INPUT
 uint16_t ADCDataDMA[4];
 #else
 uint16_t ADCDataDMA[3];
 #endif
-
-#define R_REF 10000.0
-#define B 3380.0
-#define T_REF 298.0
-#define ADC_RESOLUTION 4095.0
-
-#define V_IN 3.3
-#define R_SERIES 10000.0
 
 extern uint16_t ADC_raw_temp;
 extern uint16_t ADC_raw_volts;
@@ -52,22 +43,23 @@ void ADC_DMA_Callback()
 #endif
 }
 
-int16_t getConvertedDegrees(uint16_t adcrawtemp) {
-    float v_out = (ADC_raw_ntc / ADC_RESOLUTION) * V_IN;
-    float r_ntc = (R_SERIES * v_out) / (V_IN - v_out);
-    float t_kelvin = 1.0 / ((1.0 / T_REF) + (1.0 / B) * log(r_ntc / R_REF));
-    float t_celsius = t_kelvin - 273.15;
-    return (int16_t)t_celsius;
-}
-
 #ifdef USE_NTC
-int16_t getNTCDegrees(uint16_t ntcrawtemp){
-  int p1,p2;
-  p1 = NTC_table[ (ntcrawtemp >> 6)  ];
-  p2 = NTC_table[ (ntcrawtemp >> 6)+1];
-  return p1 - ( (p1-p2) * (ntcrawtemp & 0x003F) ) / 64;
+static int16_t getNTCDegrees(uint16_t ntcrawtemp) {
+    int p1 = NTC_table[ ntcrawtemp >> 6     ];
+    int p2 = NTC_table[(ntcrawtemp >> 6) + 1];
+    // linear interpolation within 64-step bucket, result in 0.1 °C
+    return (int16_t)(p1 - ((p1 - p2) * (ntcrawtemp & 0x3F)) / 64);
 }
 #endif
+
+int16_t getConvertedDegrees(uint16_t adcrawtemp) {
+    (void)adcrawtemp;
+#ifdef USE_NTC
+    return getNTCDegrees(ADC_raw_ntc);
+#else
+    return 0;
+#endif
+}
 
 //trigger ADC
 void startADCConversion()
