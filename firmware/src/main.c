@@ -696,9 +696,9 @@ void loadEEpromSettings()
             TIMER_CCHP(TIMER0) |= dead_time_override;
 #endif
 #ifdef WCH
-            TIM1->BDTR |= dead_time_override;
+    TIM1->BDTR |= dead_time_override;
 #endif
-#ifdef MCU_K19xxVK035
+#ifdef K19XXVK035
     PWM0->DBRED = dead_time_override;
     PWM0->DBFED = dead_time_override;
     PWM1->DBRED = dead_time_override;
@@ -1706,7 +1706,7 @@ int main(void)
         saveEEpromSettings();
     }
    //delayMillis(500);
-#ifdef MCU_K19xxVK035
+#ifdef K19XXVK035
     PWM0->DBRED = dead_time_override;
     PWM0->DBFED = dead_time_override;
     PWM1->DBRED = dead_time_override;
@@ -2031,7 +2031,7 @@ if(zero_crosses < 5){
             startADCConversion();
             degrees_celsius = getConvertedDegrees(ADC_raw_temp);
 #endif
-#ifdef MCU_K19xxVK035
+#ifdef K19XXVK035
             ADC_DMA_Callback();
             ADC_SEQ_SwStartCmd();
             degrees_celsius = getConvertedDegrees(0);

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "main.h"
-#ifdef K19XX035
+#ifdef K19XXVK035
     #include "plib035_mflash.h"
 #endif
 

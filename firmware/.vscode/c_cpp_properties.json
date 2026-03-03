@@ -1,0 +1,29 @@
+{
+    "configurations": [
+        {
+            "name": "K1921VK035",
+            "compileCommands": "${workspaceFolder}/build-arm/compile_commands.json",
+            "includePath": [
+                "${workspaceFolder}/inc",
+                "${workspaceFolder}/mcu/K19XXVK035/Inc",
+                "${workspaceFolder}/../../dependencies/niietsdk/CMSIS/Core/Include",
+                "${workspaceFolder}/../../dependencies/niietsdk/Device/NIIET/K1921VK035/Include",
+                "${workspaceFolder}/../../dependencies/niietsdk/Device/NIIET/K1921VK035/Include",
+                "${workspaceFolder}/../../dependencies/niietsdk/plib/inc",
+                "${workspaceFolder}/../../dependencies/common"
+            ],
+            "defines": [
+                "K19XXVK035",
+            ],
+            "intelliSenseMode": "gcc-arm"
+        },
+        {
+            "name": "CH32V203",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
+            "includePath": [],
+            "defines": [],
+            "intelliSenseMode": "gcc-arm"
+        }
+    ],
+    "version": 4
+}

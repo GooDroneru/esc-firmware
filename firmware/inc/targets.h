@@ -32,16 +32,16 @@
 // #define GD32SKYSTARS25
 // #define GD32SKYSTARS30
 // #define GD32SKYSTARS40
-// #define K19xxVK035
+// #define K19XXVK035`
 #endif
 
 /*****************************      NIIET Targets *************************************/
-#ifdef K19xxVK035
+#ifdef K19XXVK035
 #define NIIET
-#define FILE_NAME               "K19xxVK035"
+#define FILE_NAME               "K19XXVK035"
 #define FIRMWARE_NAME           "VK035_AM32"
 #define DEAD_TIME               30
-#define HARDWARE_GROUP_K19xxVK035
+#define HARDWARE_GROUP_K19XXVK035
 #define TARGET_VOLTAGE_DIVIDER  159
 #define USE_NTC
 #endif
@@ -2935,7 +2935,7 @@
 
 /*****************************************************CH32V203 targets
  * ************************************************/
-#define AIRBOT_V203 //TODO
+//#define AIRBOT_V203 //TODO
 #ifdef AIRBOT_V203
 //#define USE_PA2_AS_COMP
 #define FIRMWARE_NAME "AIRBOT_V203"
@@ -2952,7 +2952,7 @@
 
 #ifndef FIRMWARE_NAME
 /* if you get this then you have forgotten to add the section for your target above */
-#error "Missing defines for target"
+//#error "Missing defines for target"
 #endif
 
 /********************************** defaults if not set
@@ -4880,9 +4880,8 @@
 
 #endif
 
-/************************************ K19xxVK035 Hardware Group ***********************/
-#ifdef HARDWARE_GROUP_K19xxVK035
-#define K19xxVK035
+/************************************ K19XXVK035 Hardware Group ***********************/
+#ifdef HARDWARE_GROUP_K19XXVK035
 #define INPUT_PIN_PORT          GPIOA
 #define INPUT_PIN               GPIO_Pin_5
 #define IC_TIMER_REGISTER       ECAP1
@@ -5201,8 +5200,8 @@
 
 #endif
 
-/***********************      K19xxVK035 MCU Defines  ********************************/
-#ifdef K19xxVK035
+/***********************      K19XXVK035 MCU Defines  ********************************/
+#ifdef K19XXVK035
 #define CPU_FREQUENCY_MHZ        100
 #define EEPROM_START_ADD        (uint32_t)0x0000FC00
 #define INTERVAL_TIMER           TMR1

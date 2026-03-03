@@ -93,7 +93,7 @@ __RAMFUNC void computeDshotDMA()
 					high_pin_count++;
                     if (high_pin_count > 100) {
 						dshot_telemetry = 1;
-#ifdef K19xxVK035
+#ifdef K19XXVK035
 						if(halfpulsetime > 0x72) {
 							periodTime = 256;
 							bitShift = 8;
@@ -345,7 +345,7 @@ __RAMFUNC void make_dshot_package(uint16_t com_time)
 		<< 5 // 3rd set of four digits
         | gcr_encode_table[(((1 << 4) - 1) & (dshot_full_number >> 0))]; // last four digits
 	// GCR RLL encode 20 to 21bit output
-#ifdef MCU_K19xxVK035
+#ifdef K19XXVK035
     gcr[1 + buffer_padding] = periodTime;
 
     for (int i = 19; i >= 0; i--)
