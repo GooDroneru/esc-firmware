@@ -1,0 +1,30 @@
+buildType:
+  default: debug
+  choices:
+    debug:
+      short: Debug
+      long: Debug – no optimization, full debug info
+      buildType: Debug
+      settings:
+        OPTIMIZATION_FLAGS: "-Og"
+
+    release:
+      short: Release
+      long: Release – optimized for size
+      buildType: Release
+      settings:
+        OPTIMIZATION_FLAGS: "-Os"
+
+    release_fast:
+      short: Release (O2)
+      long: Release – optimized for speed
+      buildType: Release
+      settings:
+        OPTIMIZATION_FLAGS: "-O2"
+
+    no_opt:
+      short: No Opt
+      long: No optimization (-O0), maximum debug fidelity
+      buildType: Debug
+      settings:
+        OPTIMIZATION_FLAGS: "-O0"

@@ -1,0 +1,201 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug WCH (Windows)",
+            "cwd": "${workspaceRoot}",
+            "executable": "${command:cmake.launchTargetPath}",
+            "request": "launch",
+            "type": "cortex-debug",
+            "runToEntryPoint": "main",
+            "showDevDebugOutput": "raw",
+            "servertype": "openocd",
+            "gdbPath": "${workspaceFolder}/../../dependencies/tools/risc/xpack-riscv-none-elf-gcc-15.2.0-1/bin/riscv-none-elf-gdb.exe",
+            "objdumpPath": "${workspaceFolder}/../../dependencies/tools/risc/xpack-riscv-none-elf-gcc-15.2.0-1/bin/riscv-none-elf-objdump.exe",
+            "toolchainPrefix": "riscv-none-elf",
+            "serverpath": "${workspaceFolder}/../../dependencies/tools/openocd/wch-openocd/bin/openocd.exe",
+            "svdFile": "${workspaceFolder}/../../dependencies/tools/openocd/CH32V203xx.svd",
+            "openOCDPreConfigLaunchCommands": [
+                "set mem-inaccessible-by-default off",
+                "set architecture riscv:rv32",
+                "set remotetimeout unlimited"
+            ],
+            "liveWatch": {
+                "enabled": true,
+                "samplesPerSecond": 4
+            },
+            "configFiles": [
+                "${workspaceFolder}/../../dependencies/tools/openocd/wch-openocd/bin/wch-riscv.cfg"
+            ]
+        },
+        {
+            "name": "Debug WCH (Linux)",
+            "cwd": "${workspaceRoot}",
+            "executable": "${command:cmake.launchTargetPath}",
+            "request": "launch",
+            "type": "cortex-debug",
+            "runToEntryPoint": "main",
+            "showDevDebugOutput": "raw",
+            "servertype": "openocd",
+            "gdbPath": "${workspaceFolder}/../../dependencies/tools/risc/xpack-riscv-none-elf-gcc-15.2.0-1/bin/riscv-none-elf-gdb",
+            "objdumpPath": "${workspaceFolder}/../../dependencies/tools/risc/xpack-riscv-none-elf-gcc-15.2.0-1/bin/riscv-none-elf-objdump",
+            "toolchainPrefix": "riscv-none-elf",
+            "serverpath": "${workspaceFolder}/../../dependencies/tools/openocd/wch-openocd/bin/openocd",
+            "svdFile": "${workspaceFolder}/../../dependencies/tools/openocd/CH32V203xx.svd",
+            "openOCDPreConfigLaunchCommands": [
+                "set mem-inaccessible-by-default off",
+                "set architecture riscv:rv32",
+                "set remotetimeout unlimited"
+            ],
+            "liveWatch": {
+                "enabled": true,
+                "samplesPerSecond": 4
+            },
+            "configFiles": [
+                "${workspaceFolder}/../../dependencies/tools/openocd/wch-openocd/bin/wch-riscv.cfg"
+            ]
+        },
+        {
+            "name": "Attach WCH (Windows)",
+            "cwd": "${workspaceRoot}",
+            "executable": "${command:cmake.launchTargetPath}",
+            "request": "attach",
+            "type": "cortex-debug",
+            "showDevDebugOutput": "raw",
+            "servertype": "openocd",
+            "gdbPath": "${workspaceFolder}/../../dependencies/tools/risc/xpack-riscv-none-elf-gcc-15.2.0-1/bin/riscv-none-elf-gdb.exe",
+            "objdumpPath": "${workspaceFolder}/../../dependencies/tools/risc/xpack-riscv-none-elf-gcc-15.2.0-1/bin/riscv-none-elf-objdump.exe",
+            "toolchainPrefix": "riscv-none-elf",
+            "serverpath": "${workspaceFolder}/../../dependencies/tools/openocd/wch-openocd/bin/openocd.exe",
+            "svdFile": "${workspaceFolder}/../../dependencies/tools/openocd/CH32V203xx.svd",
+            "openOCDPreConfigLaunchCommands": [
+                "set mem-inaccessible-by-default off",
+                "set architecture riscv:rv32",
+                "set remotetimeout unlimited"
+            ],
+            "liveWatch": {
+                "enabled": true,
+                "samplesPerSecond": 4
+            },
+            "configFiles": [
+                "${workspaceFolder}/../../dependencies/tools/openocd/wch-openocd/bin/wch-riscv.cfg"
+            ]
+        },
+        {
+            "name": "Attach WCH (Linux)",
+            "cwd": "${workspaceRoot}",
+            "executable": "${command:cmake.launchTargetPath}",
+            "request": "attach",
+            "type": "cortex-debug",
+            "showDevDebugOutput": "raw",
+            "servertype": "openocd",
+            "gdbPath": "${workspaceFolder}/../../dependencies/tools/risc/xpack-riscv-none-elf-gcc-15.2.0-1/bin/riscv-none-elf-gdb",
+            "objdumpPath": "${workspaceFolder}/../../dependencies/tools/risc/xpack-riscv-none-elf-gcc-15.2.0-1/bin/riscv-none-elf-objdump",
+            "toolchainPrefix": "riscv-none-elf",
+            "serverpath": "${workspaceFolder}/../../dependencies/tools/openocd/wch-openocd/bin/openocd",
+            "svdFile": "${workspaceFolder}/../../dependencies/tools/openocd/CH32V203xx.svd",
+            "openOCDPreConfigLaunchCommands": [
+                "set mem-inaccessible-by-default off",
+                "set architecture riscv:rv32",
+                "set remotetimeout unlimited"
+            ],
+            "liveWatch": {
+                "enabled": true,
+                "samplesPerSecond": 4
+            },
+            "configFiles": [
+                "${workspaceFolder}/../../dependencies/tools/openocd/wch-openocd/bin/wch-riscv.cfg"
+            ]
+        },
+        {
+            "name": "Debug VK035",
+            "cwd": "${workspaceRoot}",
+            "executable": "${command:cmake.launchTargetPath}",
+            "request": "launch",
+            "type": "cortex-debug",
+            "runToEntryPoint": "main",
+            "showDevDebugOutput": "raw",
+            "servertype": "openocd",
+            "gdbPath": "${workspaceFolder}/../../dependencies/tools/arm/xpack-arm-none-eabi-gcc-14.2.1-1.1/bin/arm-none-eabi-gdb.exe",
+            "objdumpPath": "${workspaceFolder}/../../dependencies/tools/arm/xpack-arm-none-eabi-gcc-14.2.1-1.1/bin/arm-none-eabi-objdump.exe",
+            "toolchainPrefix": "arm-none-eabi",
+            "serverpath": "${workspaceFolder}/../../dependencies/tools/openocd/vk035/xpack-openocd-k1921vk-0.12.0-k1921vk/bin/openocd.exe",
+            "svdFile": "${workspaceFolder}/../../dependencies/tools/openocd/vk035/scripts/K1921VK035.svd",
+            "device": "k1921vk035",
+            "searchDir": [
+                "${workspaceFolder}/../../dependencies/tools/openocd/vk035",
+                "${workspaceFolder}/../../dependencies/tools/openocd/vk035/xpack-openocd-k1921vk-0.12.0-k1921vk/openocd/scripts"
+            ],
+            "configFiles": [
+                "${workspaceFolder}/../../dependencies/tools/openocd/vk035/scripts/connect_stlink.cfg"
+            ]
+        },
+        {
+            "name": "Attach VK035",
+            "cwd": "${workspaceRoot}",
+            "executable": "${command:cmake.launchTargetPath}",
+            "request": "attach",
+            "type": "cortex-debug",
+            "showDevDebugOutput": "raw",
+            "servertype": "openocd",
+            "gdbPath": "${workspaceFolder}/../../dependencies/tools/arm/xpack-arm-none-eabi-gcc-14.2.1-1.1/bin/arm-none-eabi-gdb.exe",
+            "objdumpPath": "${workspaceFolder}/../../dependencies/tools/arm/xpack-arm-none-eabi-gcc-14.2.1-1.1/bin/arm-none-eabi-objdump.exe",
+            "toolchainPrefix": "arm-none-eabi",
+            "serverpath": "${workspaceFolder}/../../dependencies/tools/openocd/vk035/xpack-openocd-k1921vk-0.12.0-k1921vk/bin/openocd.exe",
+            "svdFile": "${workspaceFolder}/../../dependencies/tools/openocd/vk035/scripts/K1921VK035.svd",
+            "device": "k1921vk035",
+            "searchDir": [
+                "${workspaceFolder}/../../dependencies/tools/openocd/vk035",
+                "${workspaceFolder}/../../dependencies/tools/openocd/vk035/xpack-openocd-k1921vk-0.12.0-k1921vk/openocd/scripts"
+            ],
+            "configFiles": [
+                "${workspaceFolder}/../../dependencies/tools/openocd/vk035/scripts/connect_stlink.cfg"
+            ]
+        },
+        {
+            "name": "Attach VK035 (Linux)",
+            "cwd": "${workspaceRoot}",
+            "executable": "${command:cmake.launchTargetPath}",
+            "request": "attach",
+            "type": "cortex-debug",
+            "showDevDebugOutput": "raw",
+            "servertype": "openocd",
+            "gdbPath": "${workspaceFolder}/../../dependencies/tools/arm/xpack-arm-none-eabi-gcc-14.2.1-1.1/bin/arm-none-eabi-gdb",
+            "objdumpPath": "${workspaceFolder}/../../dependencies/tools/arm/xpack-arm-none-eabi-gcc-14.2.1-1.1/bin/arm-none-eabi-objdump",
+            "toolchainPrefix": "arm-none-eabi",
+            "serverpath": "${workspaceFolder}/../../dependencies/tools/openocd/vk035/xpack-openocd-k1921vk-0.12.0-k1921vk/bin/openocd",
+            "svdFile": "${workspaceFolder}/../../dependencies/tools/openocd/vk035/scripts/K1921VK035.svd",
+            "device": "k1921vk035",
+            "searchDir": [
+                "${workspaceFolder}/../../dependencies/tools/openocd/vk035",
+                "${workspaceFolder}/../../dependencies/tools/openocd/vk035/xpack-openocd-k1921vk-0.12.0-k1921vk/openocd/scripts"
+            ],
+            "configFiles": [
+                "${workspaceFolder}/../../dependencies/tools/openocd/vk035/scripts/connect_stlink.cfg"
+            ]
+        },
+        {
+            "name": "Debug VK035 (Linux)",
+            "cwd": "${workspaceRoot}",
+            "executable": "${command:cmake.launchTargetPath}",
+            "request": "launch",
+            "type": "cortex-debug",
+            "runToEntryPoint": "main",
+            "showDevDebugOutput": "raw",
+            "servertype": "openocd",
+            "gdbPath": "${workspaceFolder}/../../dependencies/tools/arm/xpack-arm-none-eabi-gcc-14.2.1-1.1/bin/arm-none-eabi-gdb",
+            "objdumpPath": "${workspaceFolder}/../../dependencies/tools/arm/xpack-arm-none-eabi-gcc-14.2.1-1.1/bin/arm-none-eabi-objdump",
+            "toolchainPrefix": "arm-none-eabi",
+            "serverpath": "${workspaceFolder}/../../dependencies/tools/openocd/vk035/xpack-openocd-k1921vk-0.12.0-k1921vk/bin/openocd",
+            "svdFile": "${workspaceFolder}/../../dependencies/tools/openocd/vk035/scripts/K1921VK035.svd",
+            "device": "k1921vk035",
+            "searchDir": [
+                "${workspaceFolder}/../../dependencies/tools/openocd/vk035",
+                "${workspaceFolder}/../../dependencies/tools/openocd/vk035/xpack-openocd-k1921vk-0.12.0-k1921vk/openocd/scripts"
+            ],
+            "configFiles": [
+                "${workspaceFolder}/../../dependencies/tools/openocd/vk035/scripts/connect_stlink.cfg"
+            ]
+        }
+    ]
+}

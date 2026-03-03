@@ -1,0 +1,24 @@
+{
+    "cortex-debug.openocdPath": "${workspaceRoot}/../../dependencies/tools/openocd/vk035/xpack-openocd-k1921vk-0.12.0-k1921vk/bin/openocd.exe",
+    "cortex-debug.gdbPath": "${workspaceRoot}/../../dependencies/tools/arm/xpack-arm-none-eabi-gcc-14.2.1-1.1/bin/arm-none-eabi-gdb.exe",
+    "files.associations": {
+        "algorithm": "c",
+        "format": "c",
+        "compare": "c",
+        "k1921vk035.h": "c",
+        "plib035_mflash.h": "c",
+        "queue": "c",
+        "dshot.h": "c",
+        "crc32.h": "c",
+        "xmemory": "c",
+        "plib035_wdt.h": "c",
+        "targets.h": "c",
+        "cstring": "c",
+        "variant": "c",
+        "*.def": "c",
+        "serial_telemetry.h": "c",
+        "peripherals.h": "c",
+        "main.h": "c"
+    },
+    "cortex-debug.variableUseNaturalFormat": false
+}

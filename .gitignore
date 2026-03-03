@@ -35,6 +35,7 @@
 *.i*86
 *.x86_64
 *.hex
+*.bin
 
 # Debug files
 *.dSYM/
@@ -48,6 +49,19 @@
 .tmp_versions/
 modules.order
 Module.symvers
+
+# CMake build directory
+build/
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+compile_commands.json
+build.ninja
+*.ninja
+_deps/
+
 Mkfile.old
 dkms.conf
 
