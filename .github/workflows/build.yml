@@ -6,7 +6,6 @@ on:
   workflow_dispatch:
 
 env:
-  XPACK_RISCV_VERSION: "15.2.0-1"
   XPACK_ARM_VERSION: "14.2.1-1.1"
 
 jobs:
@@ -41,12 +40,14 @@ jobs:
         if: matrix.platform == 'CH32V203'
         uses: actions/cache@v4
         with:
-          path: ${{ github.workspace }}/_deps/tools/risc/xpack-riscv-none-elf-gcc-${{ env.XPACK_RISCV_VERSION }}
-          key: riscv-toolchain-${{ env.XPACK_RISCV_VERSION }}-linux-x64
+          path: ${{ github.workspace }}/_deps/tools/risc/riscv-none-embed-gcc-v1.4
+          key: riscv-toolchain-riscv-none-embed-v1.4-linux
 
       - name: Install RISC-V toolchain
         if: steps.cache-riscv-toolchain.outputs.cache-hit != 'true' && matrix.platform == 'CH32V203'
-        run: bash "${GITHUB_WORKSPACE}/_deps/tools/risc/install-toolchain.sh"
+        run: |
+          sudo apt-get install -y p7zip-full
+          bash "${GITHUB_WORKSPACE}/_deps/tools/risc/install-toolchain.sh"
 
       - name: Cache ARM toolchain
         id: cache-arm-toolchain
