@@ -37,11 +37,9 @@
 
 /*****************************      NIIET Targets *************************************/
 #ifdef K19XXVK035
-#define NIIET
 #define FILE_NAME               "K19XXVK035"
 #define FIRMWARE_NAME           "VK035_AM32"
-#define DEAD_TIME               30
-#define HARDWARE_GROUP_K19XXVK035
+#define DEAD_TIME               40
 #define TARGET_VOLTAGE_DIVIDER  159
 #define USE_NTC
 #endif
@@ -2936,13 +2934,13 @@
 /*****************************************************CH32V203 targets
  * ************************************************/
 //#define AIRBOT_V203 //TODO
-#ifdef AIRBOT_V203
+#ifdef CH32V203
 //#define USE_PA2_AS_COMP
 #define FIRMWARE_NAME "AIRBOT_V203"
 #define FILE_NAME "AIRBOT_V203"
-#define DEAD_TIME 45
+#define DEAD_TIME 40
 #define HARDWARE_GROUP_CH_A
-#define BOOTLOADER
+//#define BOOTLOADER
 #define USE_NTC
 #define USE_SERIAL_TELEMETRY
 #define PA6_VOLTAGE
@@ -4852,7 +4850,6 @@
 
 #ifdef HARDWARE_GROUP_CH_A
 
-#define MCU_CH32V203
 #define USE_TIMER_15_CHANNEL_1
 
 #define INPUT_PIN GPIO_Pin_0
@@ -5174,7 +5171,7 @@
 
 
 #ifdef MCU_CH32V203
-#define WCH
+#define CH32V203
 #define NEED_INPUT_READY
 #define ERASED_FLASH_BYTE    0x39
 #define CPU_FREQUENCY_MHZ    96                     //PWM freq is 48MHz, CPU freq is 96MHz
@@ -5185,6 +5182,7 @@
 #define COM_TIMER            TIM3                    
 #define TIM1_AUTORELOAD      1999
 #define APPLICATION_ADDRESS  0x00001000
+#define HARDWARE_GROUP_CH_A
 
 #define TARGET_MIN_BEMF_COUNTS  3
 #define USE_ADC
@@ -5201,7 +5199,9 @@
 #endif
 
 /***********************      K19XXVK035 MCU Defines  ********************************/
-#ifdef K19XXVK035
+#ifdef MCU_K19XXVK035
+#define HARDWARE_GROUP_K19XXVK035
+#define K19XXVK035
 #define CPU_FREQUENCY_MHZ        100
 #define EEPROM_START_ADD        (uint32_t)0x0000FC00
 #define INTERVAL_TIMER           TMR1

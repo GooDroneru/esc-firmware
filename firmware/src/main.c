@@ -695,7 +695,7 @@ void loadEEpromSettings()
 #ifdef GIGADEVICES
             TIMER_CCHP(TIMER0) |= dead_time_override;
 #endif
-#ifdef WCH
+#ifdef CH32V203
     TIM1->BDTR |= dead_time_override;
 #endif
 #ifdef K19XXVK035
@@ -1666,37 +1666,40 @@ void runBrushedLoop()
 }
 #endif
 
-#ifdef BOOTLOADER
+// #ifdef BOOTLOADER
 extern const uint8_t __device_info_start[];
 extern const uint8_t __firmware_info_start[];
-#endif
+// #endif
+
+//const char filename[30] __attribute__((section(".__device_info_start"))) = FILE_NAME;
 
 int main(void)
 {
     SystemCoreClockUpdate( );
 
-#ifdef BOOTLOADER
+// #ifdef BOOTLOADER
     hardwareVersion_t hardwareInfo;
     read_flash_bin((uint8_t*)(&hardwareInfo), (uint32_t)__device_info_start, sizeof(hardwareInfo));
     if(hardwareInfo.deviceId[4] == '8') //20R
     {
-        deadTime = 30;
+        deadTime = 40;
     }
     else if(hardwareInfo.deviceId[3] == '1') //20R
     {
-        deadTime = 60;
+        deadTime = 80;
     }
 
     gate_drive_offset = deadTime;
     dead_time_override = deadTime;
     minimum_duty_cycle = deadTime;
     stall_protect_minimum_duty = deadTime;
-#endif
+// #endif
 
     initAfterJump();
     //checkDeviceInfo();
     initCorePeripherals();
     enableCorePeripherals();
+
     loadEEpromSettings();
 
     if (FIRMWARE_VERSION_MAJOR != eepromBuffer.version.major || FIRMWARE_VERSION_MINOR != eepromBuffer.version.minor || EEPROM_VERSION > eepromBuffer.eeprom_version) {
@@ -1705,6 +1708,7 @@ int main(void)
         eepromBuffer.eeprom_version = EEPROM_VERSION;
         saveEEpromSettings();
     }
+
    //delayMillis(500);
 #ifdef K19XXVK035
     PWM0->DBRED = dead_time_override;
@@ -1740,41 +1744,41 @@ int main(void)
 	}
 
 #ifndef BOOTLOADER
-        eepromBuffer.variable_pwm = 0;
-        eepromBuffer.sine_mode_power = 5;
-        setVolume(7);
-        eepromBuffer.comp_pwm = 1;
-        //playStartupTune();
-        eepromBuffer.advance_level = 2;
-        motor_kv = 2200;
-        eepromBuffer.motor_poles = 14;
-        eepromBuffer.stall_protection = 0;
-        eepromBuffer.brake_on_stop = 1;
-        eepromBuffer.stuck_rotor_protection = 1;
-        eepromBuffer.drag_brake_strength = 1;
-        eepromBuffer.bi_direction = 0;
-        eepromBuffer.auto_advance = 1;
-        eepromBuffer.startup_power = 100;
-        eepromBuffer.rc_car_reverse = 0;
-        //LOW_VOLTAGE_CUTOFF = 1;
-        uint16_t minStartupDuty = 100;
-        min_startup_duty = (minStartupDuty + DEAD_TIME) * TIMER1_MAX_ARR / 2000;
-        minimum_duty_cycle = (minStartupDuty/ 2 + DEAD_TIME/3) * TIMER1_MAX_ARR / 2000 ;
-        stall_protect_minimum_duty = minimum_duty_cycle+10;
-        eepromBuffer.use_sine_start = 1;
-        //eepromBuffer.use_sine_start = 0;
-        servo_low_threshold = 1100;
-        servo_high_threshold = 1900;
-        dshot = 1;
-        servoPwm = 0;
-        EDT_ARMED = 1;
-        eepromBuffer.no_polling_start = 1;
+        // eepromBuffer.variable_pwm = 0;
+        // eepromBuffer.sine_mode_power = 5;
+        // setVolume(7);
+        // eepromBuffer.comp_pwm = 1;
+        // //playStartupTune();
+        // eepromBuffer.advance_level = 2;
+        // motor_kv = 2200;
+        // eepromBuffer.motor_poles = 14;
+        // eepromBuffer.stall_protection = 0;
+        // eepromBuffer.brake_on_stop = 1;
+        // eepromBuffer.stuck_rotor_protection = 1;
+        // eepromBuffer.drag_brake_strength = 1;
+        // eepromBuffer.bi_direction = 0;
+        // eepromBuffer.auto_advance = 1;
+        // eepromBuffer.startup_power = 100;
+        // eepromBuffer.rc_car_reverse = 0;
+        // //LOW_VOLTAGE_CUTOFF = 1;
+        // uint16_t minStartupDuty = 100;
+        // min_startup_duty = (minStartupDuty + DEAD_TIME) * TIMER1_MAX_ARR / 2000;
+        // minimum_duty_cycle = (minStartupDuty/ 2 + DEAD_TIME/3) * TIMER1_MAX_ARR / 2000 ;
+        // stall_protect_minimum_duty = minimum_duty_cycle+10;
+        // eepromBuffer.use_sine_start = 1;
+        // //eepromBuffer.use_sine_start = 0;
+        // servo_low_threshold = 1100;
+        // servo_high_threshold = 1900;
+        // dshot = 1;
+        // servoPwm = 0;
+        // EDT_ARMED = 1;
+        // eepromBuffer.no_polling_start = 1;
 #endif
-#ifndef DEBUG_MODE
+// #ifndef DEBUG_MODE
     zero_input_count = 0;
     MX_IWDG_Init();
     RELOAD_WATCHDOG_COUNTER();
-#endif
+// #endif
 #ifdef USE_CRSF_INPUT
 	inputSet = 1;
 	playStartupTune();
@@ -1928,6 +1932,7 @@ if(zero_crosses < 5){
                 NVIC_SystemReset();
             }
         }
+
 #ifdef USE_CUSTOM_LED
         if ((input >= 47) && (input < 1947)) {
             if (ledcounter > (2000 >> forward)) {
@@ -2017,7 +2022,8 @@ if(zero_crosses < 5){
            //makeInfoPacket();
            //send_telem_DMA(49);
            send_esc_info_flag = 0;
- 	}
+ 	}   
+
         if (PROCESS_ADC_FLAG == 1) { // for adc and telemetry set adc counter at 1khz loop rate
 #if defined(STMICRO)
             ADC_DMA_Callback();
@@ -2027,7 +2033,8 @@ if(zero_crosses < 5){
 #endif
             degrees_celsius = __LL_ADC_CALC_TEMPERATURE(3300, ADC_raw_temp, LL_ADC_RESOLUTION_12B);
 #endif
-#ifdef WCH
+
+#ifdef CH32V203
             startADCConversion();
             degrees_celsius = getConvertedDegrees(ADC_raw_temp);
 #endif
@@ -2079,6 +2086,7 @@ if(zero_crosses < 5){
         }
 #endif
     }
+
 #ifdef USE_ADC_INPUT
     signaltimeout = 0;
     ADC_smoothed_input = (((10 * ADC_smoothed_input) + ADC_raw_input) / 11);
@@ -2178,7 +2186,9 @@ if(zero_crosses < 5){
                 current_angle++;
             }
 #else
-
+        while(1) {
+        
+    }
             if (input > 48 && armed) {
 
                 if (input > 48 && input < 137) { // sine wave stepper

@@ -50,7 +50,7 @@ __RAMFUNC void computeServoInput()
 {   
 #ifdef K19XXVK035
     uint16_t diffValue = (dma_buffer[1] - dma_buffer[0]) / 100;
-#elif defined WCH
+#elif defined(CH32V203)
     uint16_t diffValue = (dma_buffer[1] - dma_buffer[0]);
 #endif
     if ((diffValue > 800) && (diffValue < 2200))
@@ -210,7 +210,7 @@ void checkDshot()
 {   
 #if defined(K19XXVK035)
     if ((smallestnumber >= 90) && (smallestnumber < 400) && (average_signal_pulse < 6000)) {
-#elif defined(WCH)
+#elif defined(CH32V203)
     if ((smallestnumber >= 1) && (smallestnumber < 4) && (average_signal_pulse < 60)) {
         ic_timer_prescaler = 0;
         if (CPU_FREQUENCY_MHZ > 100) {
@@ -228,7 +228,7 @@ void checkDshot()
     }
 #if defined(K19XXVK035)
     if ((smallestnumber >= 10) && (smallestnumber <= 80) && (average_signal_pulse < 1000)) {
-#elif defined(WCH)
+#elif defined(CH32V203)
     if ((smallestnumber >= 4) && (smallestnumber <= 8) && (average_signal_pulse < 100)) {
         ic_timer_prescaler = 1;
         if (CPU_FREQUENCY_MHZ > 100) {
@@ -250,7 +250,7 @@ void checkServo()
 #ifdef K19XXVK035
     if (smallestnumber > 2000 && smallestnumber < 210000) {
     buffersize = 4;
-#elif defined WCH
+#elif defined(CH32V203)
     if (smallestnumber > 200 && smallestnumber < 21000) {
     buffersize = 2;
     ic_timer_prescaler = CPU_FREQUENCY_MHZ - 1;
@@ -264,7 +264,7 @@ __RAMFUNC void detectInput()
 {   
 #ifdef K19XXVK035
     smallestnumber = 2000000;
-#elif defined WCH
+#elif defined(CH32V203)
     smallestnumber = 20000;
 #endif
     average_signal_pulse = 0;

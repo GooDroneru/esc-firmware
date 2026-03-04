@@ -5,6 +5,7 @@
  *      Author: Alka
  *      Modified by TempersLee June 21, 2024
  */
+#include "targets.h"
 #include "ADC.h"
 #include "ntc_tables.h"
 #include "functions.h"
@@ -44,7 +45,7 @@ void ADC_DMA_Callback()
 }
 
 #ifdef USE_NTC
-static int16_t getNTCDegrees(uint16_t ntcrawtemp) {
+int16_t getNTCDegrees(uint16_t ntcrawtemp) {
     int p1 = NTC_table[ ntcrawtemp >> 6     ];
     int p2 = NTC_table[(ntcrawtemp >> 6) + 1];
     // linear interpolation within 64-step bucket, result in 0.1 °C

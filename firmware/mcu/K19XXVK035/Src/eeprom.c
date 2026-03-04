@@ -1,5 +1,6 @@
 #include "eeprom.h"
 #include "string.h"
+#include "plib035_mflash.h"
 
 #define page_size 0x400                 
 

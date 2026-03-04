@@ -5,7 +5,7 @@
     #include "plib035_mflash.h"
 #endif
 
-#define EEPROM_VERSION 2
+#define EEPROM_VERSION 3
 
 typedef union EEprom_u {
     struct {

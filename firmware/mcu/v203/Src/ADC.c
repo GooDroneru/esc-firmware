@@ -6,6 +6,7 @@
  *      Modified by TempersLee June 21, 2024
  */
 #include "ADC.h"
+#include "targets.h"
 #include "ntc_tables.h"
 #include "functions.h"
 #ifdef USE_ADC

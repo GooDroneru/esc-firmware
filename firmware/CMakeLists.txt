@@ -8,7 +8,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_DIR}")
 #   K1921VK035  — NIIET ARM Cortex-M4F
 #   CH32V203    — WCH RISC-V  (reserved, not yet implemented)
 # ---------------------------------------------------------------------------
-set(MCU_PLATFORM "K1921VK035" CACHE STRING "Target MCU platform: K1921VK035 or CH32V203")
+set(MCU_PLATFORM "CH32V203" CACHE STRING "Target MCU platform: K1921VK035 or CH32V203")
 set_property(CACHE MCU_PLATFORM PROPERTY STRINGS "K1921VK035" "CH32V203")
 
 if(MCU_PLATFORM STREQUAL "CH32V203")
@@ -85,7 +85,7 @@ if(MCU_PLATFORM STREQUAL "K1921VK035")
     )
 
     target_compile_definitions(esc-firmware-niiet PRIVATE
-        K19XXVK035
+        MCU_K19XXVK035
         __NO_SYSTEM_INIT
         SYSCLK_PLL
         FIRMWARE_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
@@ -160,7 +160,7 @@ elseif(MCU_PLATFORM STREQUAL "CH32V203")
         -Wl,--print-memory-usage
     )
 
-    set(ESC_WCH_LD_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/../../dependencies/ch32sdk/ld/esc_ch32v20x_D6_app.ld)
+    set(ESC_WCH_LD_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/mcu/v203/esc_app.ld)
     gcc_add_linker_script(esc-firmware-wch PRIVATE ${ESC_WCH_LD_SCRIPT})
     gcc_generate_hex_file(esc-firmware-wch)
     gcc_generate_bin_file(esc-firmware-wch)

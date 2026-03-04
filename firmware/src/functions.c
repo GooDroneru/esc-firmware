@@ -58,10 +58,10 @@ static inline uint16_t get_timer_us16(void) {
     return TIMER_CNT(UTILITY_TIMER);
 #elif defined(ARTERY)
     return UTILITY_TIMER->cval;
-#elif defined(WCH)
+#elif defined(CH32V203)
     return UTILITY_TIMER->CNT>>1;
-#elif defined(NIIET)
-    return 0;  // NIIET uses DELAY_TIMER countdown, not a running timer
+#elif defined(K19XXVK035)
+    return 0;  // K19XXVK035 uses DELAY_TIMER countdown, not a running timer
 #else
 #error unsupported MCU
 #endif
@@ -72,7 +72,7 @@ static inline uint16_t get_timer_us16(void) {
  */
 void delayMicros(uint32_t micros)
 {
-#if defined(NIIET)
+#if defined(K19XXVK035)
     DELAY_TIMER->VALUE = micros * 100;
     DELAY_TIMER->CTRL_bit.ON = 1;
     while (DELAY_TIMER->VALUE != 0) {

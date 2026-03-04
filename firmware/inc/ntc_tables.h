@@ -1,6 +1,6 @@
 #ifdef USE_NTC
 
-  #if defined(K19XXVK035) || defined(WCH)
+  #if defined(K19XXVK035) || defined(CH32V203)
   // NTC 10k B=3380, R_series=10k to VCC, ADC on NTC-GND junction
   // Values in degrees Celsius. Index = ADC >> 6, interpolated by lower 6 bits.
   int NTC_table[65] = {

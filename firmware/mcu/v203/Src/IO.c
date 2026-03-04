@@ -131,7 +131,7 @@ void enableHalfTransferInt()
     INPUT_DMA_CHANNEL->CFGR  |= (0x1<<2);
 }
 
-#ifndef WCH
+#ifndef CH32V203
 
 void setInputPolarityRising()
 {

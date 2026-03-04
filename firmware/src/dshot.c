@@ -104,7 +104,7 @@ __RAMFUNC void computeDshotDMA()
 							bitShift = 7;
 							IC_TIMER_REGISTER->PRD = periodTime;
 						}
-#elif defined(WCH)
+#elif defined(CH32V203)
 						if(halfpulsetime > 0x39) {
 							periodTime = 64;
 							bitShift = 6;
@@ -354,7 +354,7 @@ __RAMFUNC void make_dshot_package(uint16_t com_time)
 		// output timer.
 	}
     gcr[buffer_padding] = 0;
-#elif defined(WCH)
+#elif defined(CH32V203)
     gcr[1 + buffer_padding] = periodTime;
     for (int i = 19; i >= 0; i--) { // each digit in gcrnumber
         gcr[buffer_padding + 20 - i + 1] = ((((gcrnumber & 1 << i)) >> i) ^ (gcr[buffer_padding + 20 - i] >> bitShift))
