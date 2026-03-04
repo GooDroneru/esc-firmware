@@ -159,7 +159,7 @@ void DMA1_Channel7_IRQHandler(void)
 //for tenkhz
 void SysTick_Handler(void)
 {
-    SysTick->SR   = 0;
+    SysTick->SR = 0;
     tenKhzRoutine( );
 }
 
