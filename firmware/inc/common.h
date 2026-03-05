@@ -3,8 +3,8 @@
 
 #pragma once
 
-// Platforms that don't define __RAMFUNC (e.g. WCH RISC-V) get a no-op fallback.
-// NIIET SDK (plib035.h) defines it as __ramfunc / __attribute__((long_call,...))
+// Provide a no-op fallback for __RAMFUNC when not defined by other headers.
+// NIIET SDK (plib035.h) will define a proper attribute when available.
 #ifndef __RAMFUNC
 #define __RAMFUNC
 #endif
