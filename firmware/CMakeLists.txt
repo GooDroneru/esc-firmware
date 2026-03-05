@@ -8,7 +8,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_DIR}")
 #   K1921VK035  — NIIET ARM Cortex-M4F
 #   CH32V203    — WCH RISC-V  (reserved, not yet implemented)
 # ---------------------------------------------------------------------------
-set(MCU_PLATFORM "CH32V203" CACHE STRING "Target MCU platform: K1921VK035 or CH32V203")
+set(MCU_PLATFORM "K1921VK035" CACHE STRING "Target MCU platform: K1921VK035 or CH32V203")
 set_property(CACHE MCU_PLATFORM PROPERTY STRINGS "K1921VK035" "CH32V203")
 
 if(MCU_PLATFORM STREQUAL "CH32V203")

@@ -1674,7 +1674,8 @@ extern const uint8_t __firmware_info_start[];
 //const char filename[30] __attribute__((section(".__device_info_start"))) = FILE_NAME;
 
 int main(void)
-{
+{   
+
     SystemCoreClockUpdate( );
 
 // #ifdef BOOTLOADER
