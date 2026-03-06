@@ -54,8 +54,8 @@ jobs:
         if: matrix.platform == 'CH32V203'
         run: |
           sudo apt-get update -q
-          sudo apt-get install -y wine64
-          wine64 --version
+          sudo apt-get install -y wine
+          wine --version
 
       - name: Setup RISC-V toolchain env (Wine wrappers)
         if: matrix.platform == 'CH32V203'
@@ -68,7 +68,7 @@ jobs:
           for exe in "$TOOL_ROOT/bin/"*.exe; do
             name=$(basename "${exe%.exe}")
             echo "#!/bin/sh" > "$WRAPPER_DIR/$name"
-            echo "exec wine64 \"$exe\" \"\$@\"" >> "$WRAPPER_DIR/$name"
+            echo "exec wine \"$exe\" \"\$@\"" >> "$WRAPPER_DIR/$name"
             chmod +x "$WRAPPER_DIR/$name"
           done
 
