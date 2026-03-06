@@ -37,7 +37,7 @@ jobs:
       - name: Symlink dependencies to expected path
         run: ln -s "${GITHUB_WORKSPACE}/_deps" "${GITHUB_WORKSPACE}/../dependencies"
 
-      # --------------- RISC-V toolchain via xpm ---------------
+      # --------------- RISC-V toolchain ---------------
       - name: Cache RISC-V toolchain
         id: cache-riscv-toolchain
         if: matrix.platform == 'CH32V203'
@@ -102,7 +102,7 @@ jobs:
           echo "RISCV_TOOLCHAIN_DIR=$TOOL_ROOT" >> $GITHUB_ENV
           echo "$TOOL_BIN" >> $GITHUB_PATH
 
-      - name: Debug - riscv toolchain
+      - name: Debug - RISC-V toolchain
         if: matrix.platform == 'CH32V203'
         run: |
           echo "RISCV_TOOLCHAIN_DIR=$RISCV_TOOLCHAIN_DIR"
@@ -138,7 +138,9 @@ jobs:
             BIN_DIR="$RISCV_TOOLCHAIN_DIR/bin"
             FIRST_GCC=$(ls "$BIN_DIR"/*-gcc 2>/dev/null | head -n1 || true)
             if [ -z "$FIRST_GCC" ]; then
-              echo "No suitable riscv compiler found in $RISCV_TOOLCHAIN_DIR/bin"; ls -la "$RISCV_TOOLCHAIN_DIR/bin" || true; exit 1
+              echo "No suitable riscv compiler found in $RISCV_TOOLCHAIN_DIR/bin"
+              ls -la "$RISCV_TOOLCHAIN_DIR/bin" || true
+              exit 1
             fi
             CXX_BIN="${FIRST_GCC%-gcc}-g++"
             echo "Using compiler: $FIRST_GCC"
