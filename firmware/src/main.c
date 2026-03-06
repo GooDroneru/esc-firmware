@@ -298,6 +298,8 @@ fastPID stallPid = { // 1khz loop time
     .output_limit = 50000
 };
 
+extern char _eeprom_start_addr;
+
 EEprom_t eepromBuffer;
 volatile uint32_t polling_mode_changeover;
 volatile uint8_t ramp_divider;
@@ -305,7 +307,7 @@ volatile uint8_t max_ramp_startup = RAMP_SPEED_STARTUP;
 volatile uint8_t max_ramp_low_rpm = RAMP_SPEED_LOW_RPM;
 volatile uint8_t max_ramp_high_rpm = RAMP_SPEED_HIGH_RPM;
 char send_esc_info_flag;
-uint32_t eeprom_address = EEPROM_START_ADD; 
+uint32_t eeprom_address = (uint32_t)(&_eeprom_start_addr);
 uint16_t prop_brake_duty_cycle = 0;
 uint16_t ledcounter = 0;
 uint16_t ramp_count;

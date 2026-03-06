@@ -5203,7 +5203,7 @@
 #define HARDWARE_GROUP_K19XXVK035
 #define K19XXVK035
 #define CPU_FREQUENCY_MHZ        100
-#define EEPROM_START_ADD        (uint32_t)0x0000FC00
+//#define EEPROM_START_ADD        (uint32_t)0x0000F000
 #define INTERVAL_TIMER           TMR1
 #define INTERVAL_TIMER_EN        TMR1EN
 #define TEN_KHZ_TIMER            SysTick
