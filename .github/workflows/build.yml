@@ -53,8 +53,9 @@ jobs:
       - name: Install Wine
         if: matrix.platform == 'CH32V203'
         run: |
+          sudo dpkg --add-architecture i386
           sudo apt-get update -q
-          sudo apt-get install -y wine
+          sudo apt-get install -y wine wine32:i386
           wine --version
 
       - name: Setup RISC-V toolchain env (Wine wrappers)
