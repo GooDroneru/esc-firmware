@@ -37,20 +37,20 @@ jobs:
       - name: Symlink dependencies to expected path
         run: ln -s "${GITHUB_WORKSPACE}/_deps" "${GITHUB_WORKSPACE}/../dependencies"
 
-      # --------------- RISC-V toolchain (hydrausb3, WCH-Interrupt-fast support) ---------------
+      # --------------- RISC-V toolchain (riscv-none-embed 8.2.0-3.1 with WCH CSR support) ---------------
       - name: Cache RISC-V toolchain
         id: cache-riscv-toolchain
         if: matrix.platform == 'CH32V203'
         uses: actions/cache@v4
         with:
           path: ${{ runner.temp }}/riscv
-          key: riscv-toolchain-hydrausb3-12.2.0-1-linux-x64
+          key: riscv-none-embed-8.2.0-3.1-linux-x64
 
-      - name: Install RISC-V toolchain (hydrausb3)
+      - name: Install RISC-V toolchain
         if: matrix.platform == 'CH32V203' && steps.cache-riscv-toolchain.outputs.cache-hit != 'true'
         run: |
-          ARCHIVE="xpack-riscv-none-elf-gcc-12.2.0-1-linux-x64.tar.gz"
-          URL="https://github.com/hydrausb3/riscv-none-elf-gcc-xpack/releases/download/12.2.0-1/${ARCHIVE}"
+          ARCHIVE="xpack-riscv-none-embed-gcc-8.2.0-3.1-linux-x64.tgz"
+          URL="https://github.com/xpack-dev-tools/riscv-none-embed-gcc-xpack/releases/download/v8.2.0-3.1/${ARCHIVE}"
           DEST="${{ runner.temp }}/riscv"
 
           echo "Downloading $URL"
@@ -61,15 +61,15 @@ jobs:
           tar -xf "/tmp/${ARCHIVE}" -C "$DEST" --strip-components=1
           rm "/tmp/${ARCHIVE}"
 
-          echo "Toolchain installed to $DEST"
+          echo "Done: $(ls $DEST/bin/riscv-none-embed-gcc)"
 
       - name: Setup RISC-V toolchain env
         if: matrix.platform == 'CH32V203'
         run: |
           TOOL_ROOT="${{ runner.temp }}/riscv"
-          GCC_BIN=$(find "$TOOL_ROOT/bin" -name "riscv-none-elf-gcc" -type f 2>/dev/null | head -n1)
-          if [ -z "$GCC_BIN" ]; then
-            echo "Failed to locate riscv-none-elf-gcc binary" >&2
+          GCC_BIN="$TOOL_ROOT/bin/riscv-none-embed-gcc"
+          if [ ! -f "$GCC_BIN" ]; then
+            echo "riscv-none-embed-gcc not found at $GCC_BIN" >&2
             ls -la "$TOOL_ROOT/bin" || true
             exit 1
           fi
@@ -81,9 +81,9 @@ jobs:
         if: matrix.platform == 'CH32V203'
         run: |
           echo "RISCV_TOOLCHAIN_DIR=$RISCV_TOOLCHAIN_DIR"
-          ls -la "$RISCV_TOOLCHAIN_DIR/bin" | grep gcc || echo "gcc not found in bin"
-          which riscv-none-elf-gcc || echo "riscv-none-elf-gcc not on PATH"
-          riscv-none-elf-gcc --version || true
+          ls -la "$RISCV_TOOLCHAIN_DIR/bin" | grep gcc || echo "gcc not found"
+          which riscv-none-embed-gcc || echo "not on PATH"
+          riscv-none-embed-gcc --version || true
 
       # --------------- ARM toolchain ---------------
       - name: Cache ARM toolchain
@@ -110,13 +110,11 @@ jobs:
               -DCMAKE_CXX_COMPILER="$CXX" \
               -DCMAKE_ASM_COMPILER="$ASM"
           elif [ "${{ matrix.platform }}" = "CH32V203" ]; then
-            BIN_DIR="$RISCV_TOOLCHAIN_DIR/bin"
-            # hydrausb3 toolchain uses riscv-none-elf-gcc
-            GCC_BIN="$BIN_DIR/riscv-none-elf-gcc"
-            GXX_BIN="$BIN_DIR/riscv-none-elf-g++"
+            GCC_BIN="$RISCV_TOOLCHAIN_DIR/bin/riscv-none-embed-gcc"
+            GXX_BIN="$RISCV_TOOLCHAIN_DIR/bin/riscv-none-embed-g++"
             if [ ! -f "$GCC_BIN" ]; then
-              echo "riscv-none-elf-gcc not found in $BIN_DIR"
-              ls -la "$BIN_DIR" || true
+              echo "riscv-none-embed-gcc not found in $RISCV_TOOLCHAIN_DIR/bin"
+              ls -la "$RISCV_TOOLCHAIN_DIR/bin" || true
               exit 1
             fi
             echo "Using compiler: $GCC_BIN"
