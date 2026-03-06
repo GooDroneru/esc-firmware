@@ -37,78 +37,53 @@ jobs:
       - name: Symlink dependencies to expected path
         run: ln -s "${GITHUB_WORKSPACE}/_deps" "${GITHUB_WORKSPACE}/../dependencies"
 
-      # --------------- RISC-V toolchain ---------------
+      # --------------- RISC-V toolchain (hydrausb3, WCH-Interrupt-fast support) ---------------
       - name: Cache RISC-V toolchain
         id: cache-riscv-toolchain
         if: matrix.platform == 'CH32V203'
         uses: actions/cache@v4
         with:
           path: ${{ runner.temp }}/riscv
-          key: riscv-toolchain-embed-v1.4-linux-x64
+          key: riscv-toolchain-hydrausb3-12.2.0-1-linux-x64
 
-      - name: Setup Node.js (for xpm)
-        if: matrix.platform == 'CH32V203'
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-
-      - name: Ensure xpm CLI (install if missing)
-        if: matrix.platform == 'CH32V203'
-        run: |
-          if command -v xpm >/dev/null 2>&1; then
-            echo "xpm already available"
-            xpm --version
-            exit 0
-          fi
-          echo "xpm not found; attempting to install via npm..."
-          if ! command -v npm >/dev/null 2>&1; then
-            echo "npm not available on runner; cannot install xpm" >&2
-            exit 1
-          fi
-          npm install --global @xpack-dev-tools/xpm || npm install --global xpm || true
-          if ! command -v xpm >/dev/null 2>&1; then
-            echo "Failed to install xpm via npm; please ensure the runner has xpm preinstalled" >&2
-            exit 1
-          fi
-          xpm --version
-
-      - name: Install RISC-V toolchain via xpm
+      - name: Install RISC-V toolchain (hydrausb3)
         if: matrix.platform == 'CH32V203' && steps.cache-riscv-toolchain.outputs.cache-hit != 'true'
         run: |
-          if ! command -v xpm >/dev/null 2>&1; then
-            echo "xpm not found; failing as required." >&2
-            exit 1
-          fi
+          ARCHIVE="xpack-riscv-none-elf-gcc-12.2.0-1-linux-x64.tar.gz"
+          URL="https://github.com/hydrausb3/riscv-none-elf-gcc-xpack/releases/download/12.2.0-1/${ARCHIVE}"
+          DEST="${{ runner.temp }}/riscv"
 
-          echo "Installing xPack riscv toolchain via xpm"
-          PKG="@xpack-dev-tools/riscv-none-embed-gcc@8.2.1-3.1.1"
-          echo "Installing xpm package: $PKG"
-          if ! xpm install --global "$PKG"; then
-            echo "xpm failed to install package $PKG" >&2
-            exit 3
-          fi
-          echo "xpm installed package: $PKG"
+          echo "Downloading $URL"
+          mkdir -p "$DEST"
+          curl -fSL "$URL" -o "/tmp/${ARCHIVE}"
 
-          GCC_BIN=$(find "$HOME/.local/xPacks/@xpack-dev-tools/riscv-none-embed-gcc" \
-            -path "*/bin/riscv-none-embed-gcc" -type f 2>/dev/null | head -n1)
+          echo "Extracting to $DEST"
+          tar -xf "/tmp/${ARCHIVE}" -C "$DEST" --strip-components=1
+          rm "/tmp/${ARCHIVE}"
+
+          echo "Toolchain installed to $DEST"
+
+      - name: Setup RISC-V toolchain env
+        if: matrix.platform == 'CH32V203'
+        run: |
+          TOOL_ROOT="${{ runner.temp }}/riscv"
+          GCC_BIN=$(find "$TOOL_ROOT/bin" -name "riscv-none-elf-gcc" -type f 2>/dev/null | head -n1)
           if [ -z "$GCC_BIN" ]; then
-            echo "Failed to locate riscv-none-embed-gcc binary" >&2
-            find "$HOME/.local/xPacks/@xpack-dev-tools/riscv-none-embed-gcc" -maxdepth 5 2>/dev/null || true
+            echo "Failed to locate riscv-none-elf-gcc binary" >&2
+            ls -la "$TOOL_ROOT/bin" || true
             exit 1
           fi
-          TOOL_BIN=$(dirname "$GCC_BIN")
-          TOOL_ROOT=$(dirname "$TOOL_BIN")
-          echo "Found xpack toolchain: $GCC_BIN"
+          echo "Found toolchain: $GCC_BIN"
           echo "RISCV_TOOLCHAIN_DIR=$TOOL_ROOT" >> $GITHUB_ENV
-          echo "$TOOL_BIN" >> $GITHUB_PATH
+          echo "$TOOL_ROOT/bin" >> $GITHUB_PATH
 
       - name: Debug - RISC-V toolchain
         if: matrix.platform == 'CH32V203'
         run: |
           echo "RISCV_TOOLCHAIN_DIR=$RISCV_TOOLCHAIN_DIR"
-          ls -la "$RISCV_TOOLCHAIN_DIR/bin" || echo "bin directory not found"
-          which riscv-none-embed-gcc || echo "riscv-none-embed-gcc not on PATH"
-          riscv-none-embed-gcc --version || true
+          ls -la "$RISCV_TOOLCHAIN_DIR/bin" | grep gcc || echo "gcc not found in bin"
+          which riscv-none-elf-gcc || echo "riscv-none-elf-gcc not on PATH"
+          riscv-none-elf-gcc --version || true
 
       # --------------- ARM toolchain ---------------
       - name: Cache ARM toolchain
@@ -136,19 +111,20 @@ jobs:
               -DCMAKE_ASM_COMPILER="$ASM"
           elif [ "${{ matrix.platform }}" = "CH32V203" ]; then
             BIN_DIR="$RISCV_TOOLCHAIN_DIR/bin"
-            FIRST_GCC=$(ls "$BIN_DIR"/*-gcc 2>/dev/null | head -n1 || true)
-            if [ -z "$FIRST_GCC" ]; then
-              echo "No suitable riscv compiler found in $RISCV_TOOLCHAIN_DIR/bin"
-              ls -la "$RISCV_TOOLCHAIN_DIR/bin" || true
+            # hydrausb3 toolchain uses riscv-none-elf-gcc
+            GCC_BIN="$BIN_DIR/riscv-none-elf-gcc"
+            GXX_BIN="$BIN_DIR/riscv-none-elf-g++"
+            if [ ! -f "$GCC_BIN" ]; then
+              echo "riscv-none-elf-gcc not found in $BIN_DIR"
+              ls -la "$BIN_DIR" || true
               exit 1
             fi
-            CXX_BIN="${FIRST_GCC%-gcc}-g++"
-            echo "Using compiler: $FIRST_GCC"
+            echo "Using compiler: $GCC_BIN"
             cmake -S firmware -B ${{ matrix.build_dir }} \
               -DCMAKE_BUILD_TYPE=Release \
               -DMCU_PLATFORM=${{ matrix.platform }} \
-              -DCMAKE_C_COMPILER="$FIRST_GCC" \
-              -DCMAKE_CXX_COMPILER="$CXX_BIN"
+              -DCMAKE_C_COMPILER="$GCC_BIN" \
+              -DCMAKE_CXX_COMPILER="$GXX_BIN"
           else
             cmake -S firmware -B ${{ matrix.build_dir }} \
               -DCMAKE_BUILD_TYPE=Release \
