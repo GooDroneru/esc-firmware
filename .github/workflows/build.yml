@@ -72,6 +72,10 @@ jobs:
             chmod +x "$WRAPPER_DIR/$name"
           done
 
+          # Make .exe files executable so Wine can run them
+          chmod +x "$TOOL_ROOT/bin/"*.exe "$TOOL_ROOT/bin/"*.dll 2>/dev/null || true
+          chmod +x "$TOOL_ROOT/bin/"*.exe
+
           echo "Created wrappers:"
           ls "$WRAPPER_DIR"
           echo "RISCV_TOOLCHAIN_DIR=$TOOL_ROOT" >> $GITHUB_ENV
