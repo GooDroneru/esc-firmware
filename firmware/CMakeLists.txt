@@ -101,6 +101,7 @@ if(MCU_PLATFORM STREQUAL "K1921VK035")
         -Wl,--print-memory-usage
     )
 
+    set(K1921VK035_ESC_APP_LD_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/mcu/k19xxvk035/esc_app.ld)
     gcc_add_linker_script(esc-firmware-niiet PRIVATE ${K1921VK035_ESC_APP_LD_SCRIPT})
     gcc_generate_hex_file(esc-firmware-niiet)
     gcc_generate_bin_file(esc-firmware-niiet)
