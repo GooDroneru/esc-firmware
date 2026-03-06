@@ -67,9 +67,8 @@ jobs:
           # Create shell wrapper for each .exe
           for exe in "$TOOL_ROOT/bin/"*.exe; do
             name=$(basename "${exe%.exe}")
-            printf '#!/bin/sh
-exec wine64 "%s" "$@"
-' "$exe" > "$WRAPPER_DIR/$name"
+            echo "#!/bin/sh" > "$WRAPPER_DIR/$name"
+            echo "exec wine64 \"$exe\" \"\$@\"" >> "$WRAPPER_DIR/$name"
             chmod +x "$WRAPPER_DIR/$name"
           done
 
