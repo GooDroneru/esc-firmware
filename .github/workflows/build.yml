@@ -29,8 +29,20 @@ jobs:
           repository: GooDroneru/dependencies
           path: _deps
           token: ${{ secrets.GITHUB_TOKEN }}
-          lfs: true
-          fetch-depth: 0
+          lfs: false
+          fetch-depth: 1
+
+      - name: Fetch LFS files for RISC-V toolchain
+        if: matrix.platform == 'CH32V203'
+        working-directory: _deps
+        run: |
+          git lfs pull --include="tools/risc/riscv-toolchain/**"
+
+      - name: Fetch LFS files for ARM toolchain
+        if: matrix.platform == 'K1921VK035'
+        working-directory: _deps
+        run: |
+          git lfs pull --include="tools/arm/**"
 
       # CMakeLists.txt expects dependencies to be at ../dependencies relative to
       # the firmware repo (sibling directory). Create a symlink to match that layout.
