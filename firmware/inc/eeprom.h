@@ -9,9 +9,9 @@
 
 typedef union EEprom_u {
     struct {
-        uint8_t reserved_0; //0
+        uint8_t no_polling_start; //0
         uint8_t eeprom_version; //1
-        uint8_t no_polling_start; //2
+        uint8_t bootloader_version; //2
         struct {        
             uint8_t major; //3
             uint8_t minor; //4
