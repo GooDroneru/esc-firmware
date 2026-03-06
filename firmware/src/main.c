@@ -299,6 +299,8 @@ fastPID stallPid = { // 1khz loop time
 };
 
 extern char _eeprom_start_addr;
+extern char _flash_rw_offset;
+uint32_t eeprom_address = 0xF000;
 
 EEprom_t eepromBuffer;
 volatile uint32_t polling_mode_changeover;
@@ -307,7 +309,6 @@ volatile uint8_t max_ramp_startup = RAMP_SPEED_STARTUP;
 volatile uint8_t max_ramp_low_rpm = RAMP_SPEED_LOW_RPM;
 volatile uint8_t max_ramp_high_rpm = RAMP_SPEED_HIGH_RPM;
 char send_esc_info_flag;
-uint32_t eeprom_address = (uint32_t)(&_eeprom_start_addr);
 uint16_t prop_brake_duty_cycle = 0;
 uint16_t ledcounter = 0;
 uint16_t ramp_count;
@@ -1677,7 +1678,7 @@ extern const uint8_t __firmware_info_start[];
 
 int main(void)
 {   
-
+    eeprom_address = (uint32_t)(&_eeprom_start_addr) + (uint32_t)(&_flash_rw_offset);
     SystemCoreClockUpdate( );
 
 // #ifdef BOOTLOADER
