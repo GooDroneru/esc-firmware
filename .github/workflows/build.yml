@@ -76,13 +76,17 @@ jobs:
             URL="https://github.com/xpack-dev-tools/riscv-none-embed-gcc-xpack/releases/download/v8.2.0-3.1/${ARCHIVE}"
             mkdir -p "$TOOL_ROOT"
             curl -fSL "$URL" -o "/tmp/${ARCHIVE}"
+            # Show top-level dirs in archive to verify structure
+            echo "Archive top-level entries:"
+            tar -tf "/tmp/${ARCHIVE}" | head -5
             tar -xf "/tmp/${ARCHIVE}" -C "$TOOL_ROOT" --strip-components=1
             rm "/tmp/${ARCHIVE}"
           fi
 
           if [ ! -f "$GCC_BIN" ]; then
             echo "riscv-none-embed-gcc still not found after download" >&2
-            ls -la "$TOOL_ROOT/bin" || true
+            echo "Contents of TOOL_ROOT:"
+            find "$TOOL_ROOT" -maxdepth 3 | head -30 || true
             exit 1
           fi
 
