@@ -23,7 +23,7 @@ jobs:
       - name: Checkout firmware
         uses: actions/checkout@v4
 
-      - name: Checkout dependencies
+      - name: Checkout dependencies (no LFS)
         uses: actions/checkout@v4
         with:
           repository: GooDroneru/dependencies
@@ -32,13 +32,13 @@ jobs:
           lfs: false
           fetch-depth: 1
 
-      - name: Fetch LFS files for RISC-V toolchain
+      - name: Fetch LFS - RISC-V toolchain
         if: matrix.platform == 'CH32V203'
         working-directory: _deps
         run: |
           git lfs pull --include="tools/risc/riscv-toolchain/**"
 
-      - name: Fetch LFS files for ARM toolchain
+      - name: Fetch LFS - ARM toolchain
         if: matrix.platform == 'K1921VK035'
         working-directory: _deps
         run: |
@@ -49,21 +49,34 @@ jobs:
       - name: Symlink dependencies to expected path
         run: ln -s "${GITHUB_WORKSPACE}/_deps" "${GITHUB_WORKSPACE}/../dependencies"
 
-      # --------------- RISC-V toolchain (WCH-patched, from dependencies repo) ---------------
-      - name: Setup RISC-V toolchain env
+      # --------------- RISC-V toolchain (WCH Windows .exe via Wine) ---------------
+      - name: Install Wine
+        if: matrix.platform == 'CH32V203'
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y wine64
+          wine64 --version
+
+      - name: Setup RISC-V toolchain env (Wine wrappers)
         if: matrix.platform == 'CH32V203'
         run: |
           TOOL_ROOT="${GITHUB_WORKSPACE}/_deps/tools/risc/riscv-toolchain/risc-none-embed-gcc-8.2.0"
-          GCC_BIN="$TOOL_ROOT/bin/riscv-none-embed-gcc"
-          if [ ! -f "$GCC_BIN" ]; then
-            echo "riscv-none-embed-gcc not found at $GCC_BIN" >&2
-            ls -la "$TOOL_ROOT/bin" || true
-            exit 1
-          fi
-          chmod +x "$TOOL_ROOT/bin/"*
-          echo "Found toolchain: $GCC_BIN"
+          WRAPPER_DIR="${{ runner.temp }}/riscv-wine/bin"
+          mkdir -p "$WRAPPER_DIR"
+
+          # Create shell wrapper for each .exe
+          for exe in "$TOOL_ROOT/bin/"*.exe; do
+            name=$(basename "${exe%.exe}")
+            printf '#!/bin/sh
+exec wine64 "%s" "$@"
+' "$exe" > "$WRAPPER_DIR/$name"
+            chmod +x "$WRAPPER_DIR/$name"
+          done
+
+          echo "Created wrappers:"
+          ls "$WRAPPER_DIR"
           echo "RISCV_TOOLCHAIN_DIR=$TOOL_ROOT" >> $GITHUB_ENV
-          echo "$TOOL_ROOT/bin" >> $GITHUB_PATH
+          echo "$WRAPPER_DIR" >> $GITHUB_PATH
 
       - name: Debug - RISC-V toolchain
         if: matrix.platform == 'CH32V203'
