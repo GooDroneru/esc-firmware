@@ -873,9 +873,9 @@ void commutate()
     commutation_intervals[step - 1] = commutation_interval; // just used to calulate average
     
 #ifdef USE_PULSE_OUT
-	if(step == 1 || step == 4  ){
-    WRITE_REG(RPM_PULSE_PORT->ODR, READ_REG(RPM_PULSE_PORT->ODR) ^ RPM_PULSE_PIN);
-		}
+    if(step == 1 || step == 4  ){
+        WRITE_REG(RPM_PULSE_PORT->ODR, READ_REG(RPM_PULSE_PORT->ODR) ^ RPM_PULSE_PIN);
+    }
 #endif
 }
 
@@ -1466,28 +1466,33 @@ __RAMFUNC void tenKhzRoutine()
              duty_cycle = last_duty_cycle;
                         }
 
-		        if ((armed && running) && input > 47) {
-            if (eepromBuffer.variable_pwm) {
+                // Ограничение duty cycle на 99%
+                #define DUTY_LIMIT_99 1970
+                uint16_t duty_to_set = duty_cycle;
+                if (duty_cycle > DUTY_LIMIT_99) {
+                    duty_to_set = DUTY_LIMIT_99;
+                }
+                if ((armed && running) && input > 47) {
+                    if (eepromBuffer.variable_pwm) {
+                        // ...existing code...
                     }
-                    adjusted_duty_cycle = ((duty_cycle * tim1_arr) / 2000) + 1;
-
-		        } else {
-
-		            if (prop_brake_active) {
-              adjusted_duty_cycle =  tim1_arr - ((prop_brake_duty_cycle * tim1_arr) / 2000);
-		            } else {
-              if((eepromBuffer.brake_on_stop == 2) && armed){  // require arming for active brake
-                comStep(2);
-                adjusted_duty_cycle = DEAD_TIME + ((eepromBuffer.active_brake_power * tim1_arr) / 2000)* 10;
-            }else{
-                adjusted_duty_cycle = ((duty_cycle * tim1_arr) / 2000);
-		        }
-		            }
-		        }
-		        last_duty_cycle = duty_cycle;
-		        SET_AUTO_RELOAD_PWM(tim1_arr);
-		        SET_DUTY_CYCLE_ALL(adjusted_duty_cycle);
-		    }
+                    adjusted_duty_cycle = ((duty_to_set * tim1_arr) / 2000) + 1;
+                } else {
+                    if (prop_brake_active) {
+                        adjusted_duty_cycle =  tim1_arr - ((prop_brake_duty_cycle * tim1_arr) / 2000);
+                    } else {
+                        if((eepromBuffer.brake_on_stop == 2) && armed){  // require arming for active brake
+                            comStep(2);
+                            adjusted_duty_cycle = DEAD_TIME + ((eepromBuffer.active_brake_power * tim1_arr) / 2000)* 10;
+                        }else{
+                            adjusted_duty_cycle = ((duty_cycle * tim1_arr) / 2000);
+                        }
+                    }
+                }
+                last_duty_cycle = duty_cycle;
+                SET_AUTO_RELOAD_PWM(tim1_arr);
+                SET_DUTY_CYCLE_ALL(adjusted_duty_cycle);
+            }
 #endif // ndef brushed_mode
 #if defined(FIXED_DUTY_MODE) || defined(FIXED_SPEED_MODE)
 		    if (getInputPinState()) {
@@ -1686,11 +1691,11 @@ int main(void)
     read_flash_bin((uint8_t*)(&hardwareInfo), (uint32_t)__device_info_start, sizeof(hardwareInfo));
     if(hardwareInfo.deviceId[4] == '8') //20R
     {
-        deadTime = 40;
+        deadTime = 30;
     }
     else if(hardwareInfo.deviceId[3] == '1') //20R
     {
-        deadTime = 80;
+        deadTime = 60;
     }
 
     gate_drive_offset = deadTime;
@@ -2190,9 +2195,6 @@ if(zero_crosses < 5){
                 current_angle++;
             }
 #else
-        while(1) {
-        
-    }
             if (input > 48 && armed) {
 
                 if (input > 48 && input < 137) { // sine wave stepper
