@@ -100,6 +100,7 @@ if(MCU_PLATFORM STREQUAL "K1921VK035")
     target_link_options(esc-firmware-niiet PRIVATE
         -Wl,-Map=${CMAKE_BINARY_DIR}/esc-firmware-niiet.map
         -Wl,--print-memory-usage
+        -Wl,--no-warn-rwx-segments
     )
 
     set(K1921VK035_ESC_APP_LD_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/mcu/k19xxvk035/esc_app.ld)
