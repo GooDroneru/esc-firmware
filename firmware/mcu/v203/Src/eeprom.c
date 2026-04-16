@@ -14,7 +14,7 @@ void save_flash_nolib(uint8_t *data, int length, uint32_t add)
 {
     volatile uint32_t start_addr/*,page_num*/;
     uint16_t data_to_FLASH[128];
-    memset(data_to_FLASH, 0, 128);
+    memset(data_to_FLASH, 0, sizeof(data_to_FLASH));
 
 //    PRINT("len:%d add:%x\r\n",length,add);
     while ((FLASH->STATR & FLASH_STATR_BSY) != 0)
@@ -37,10 +37,10 @@ void save_flash_nolib(uint8_t *data, int length, uint32_t add)
         FLASH_ErasePage_Fast(add);
     }
 
-    start_addr = (add & 0xFFFFFF00);  //256×Ö½Ú¶ÔÆë  0x08001002
+    start_addr = (add & 0xFFFFFF00);  //256ï¿½Ö½Ú¶ï¿½ï¿½ï¿½  0x08001002
     for(int i=0;i<128;i++)
     {
-        data_to_FLASH[i] = *(  (volatile uint16_t *)( start_addr + 2*i )  ); //¶ÁÈ¡Ô­À´µÄÖµ
+        data_to_FLASH[i] = *(  (volatile uint16_t *)( start_addr + 2*i )  ); //ï¿½ï¿½È¡Ô­ï¿½ï¿½ï¿½ï¿½Öµ
     }
 
     for(int j=0;j<length/2;j++)
