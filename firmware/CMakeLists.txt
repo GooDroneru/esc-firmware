@@ -7,6 +7,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_DIR}")
 # Select target MCU platform (must be set before project())
 #   K1921VK035  — NIIET ARM Cortex-M4F
 #   CH32V203    — WCH RISC-V  (reserved, not yet implemented)
+
 # ---------------------------------------------------------------------------
 set(MCU_PLATFORM "K1921VK035" CACHE STRING "Target MCU platform: K1921VK035 or CH32V203")
 set_property(CACHE MCU_PLATFORM PROPERTY STRINGS "K1921VK035" "CH32V203")
@@ -147,6 +148,7 @@ elseif(MCU_PLATFORM STREQUAL "CH32V203")
 
     target_compile_definitions(esc-firmware-wch PRIVATE
         MCU_CH32V203
+        NEED_INPUT_READY
         ${CH32_SYSCLK}
         FIRMWARE_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
         FIRMWARE_VERSION_MINOR=${PROJECT_VERSION_MINOR}
