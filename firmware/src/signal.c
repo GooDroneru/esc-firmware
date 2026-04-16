@@ -172,12 +172,15 @@ __RAMFUNC void transfercomplete()
             }
         }
         if (!armed) {
-            if (dshot && (average_count < 8) && (zero_input_count > 5)) {
+            if (dshot && (average_count < 4) && (zero_input_count > 5)) {
+                // Optimized: Fast convergence - use only 4 samples instead of 8
                 average_count++;
                 average_packet_length = average_packet_length + (uint16_t)(dma_buffer[31] - dma_buffer[0]);
-                if (average_count == 8) {
-                    dshot_frametime_high = (average_packet_length >> 3) + (average_packet_length >> 7);
-                    dshot_frametime_low = (average_packet_length >> 3) - (average_packet_length >> 7);
+                if (average_count == 4) {
+                    // More aggressive: ±6.25% window instead of ±12.5% for tighter lock
+                    uint32_t avg = average_packet_length >> 2;  // divide by 4 (4 samples)
+                    dshot_frametime_high = avg + (avg >> 4);     // +6.25%
+                    dshot_frametime_low = avg - (avg >> 4);      // -6.25%
                 }
 	        }
             if (adjusted_input == 0 && calibration_required == 0) { // note this in input..not newinput so it
