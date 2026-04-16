@@ -640,6 +640,11 @@ void loadEEpromSettings()
     startup_max_duty_cycle = minimum_duty_cycle + 400;  
 
     motor_kv = (eepromBuffer.motor_kv * 40) + 20;
+
+    if (eepromBuffer.motor_poles < 2 || eepromBuffer.motor_poles > 32) {
+        eepromBuffer.motor_poles = 14;
+    }
+
 #ifdef THREE_CELL_MAX
 		motor_kv =  motor_kv / 2;
 #endif
