@@ -317,7 +317,7 @@ void TENKHz_SysTick_Init(void)
 {
     SysTick_Config(5000 - 1);
     NVIC_EnableIRQ(SysTick_IRQn);
-    NVIC_SetPriority(SysTick_IRQn, 0xF);
+    NVIC_SetPriority(SysTick_IRQn, 0x3);
 }
 
 void reloadWatchDogCounter()
@@ -333,7 +333,7 @@ void COM_TIM3_Init(void)
     COM_TIMER->LOAD = 0;
     COM_TIMER->CTRL_bit.INTEN = 1;
     __NVIC_EnableIRQ(COM_TIMER_IRQ);  
-    NVIC_SetPriority(COM_TIMER_IRQ, 0x1);
+    NVIC_SetPriority(COM_TIMER_IRQ, 0x0);
 }
 
 void MX_TIM16_Init(void)
@@ -358,7 +358,7 @@ void ALL_GPIO_Init(void)
     RCU->HCLKCFG_bit.GPIOAEN = 1;
     RCU->HRSTCFG_bit.GPIOAEN = 1;
     NVIC_EnableIRQ(GPIOB_IRQn);
-    NVIC_SetPriority(GPIOB_IRQn, 0x2);
+    NVIC_SetPriority(GPIOB_IRQn, 0x0);
 }
 
 extern uint32_t dma_buffer[64];
@@ -436,7 +436,7 @@ void UN_TIM2_Init(void)
 
 
     NVIC_EnableIRQ(ADC_SEQ1_IRQn);
-    NVIC_SetPriority(ADC_SEQ1_IRQn, 3);
+    NVIC_SetPriority(ADC_SEQ1_IRQn, 2);
     //DMA->USEBURSTSET_bit.CH8 = 1;
     // Инциализация контроллера DMA
 
