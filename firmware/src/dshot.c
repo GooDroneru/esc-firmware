@@ -301,6 +301,7 @@ __RAMFUNC void make_dshot_package(uint16_t com_time)
     
     if (extended_frame_to_send > 0) {
         dshot_full_number = extended_frame_to_send;
+        shift_amount = 0;  // Extended frames use fixed format, no range extension needed
         telem_scheduler.last_sent_extended = 1;
 
     } else {
