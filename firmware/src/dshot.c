@@ -106,12 +106,12 @@ __RAMFUNC void computeDshotDMA()
 						}
 #elif defined(CH32V203)
 						if(halfpulsetime > 0x39) {
-							periodTime = 64;
-							bitShift = 6;
+							periodTime = 128;
+							bitShift = 7;
 						}
 						else {
-							periodTime = 32;
-							bitShift = 5;
+							periodTime = 64;
+							bitShift = 6;
 						}
 #endif
 					}
@@ -265,6 +265,15 @@ __RAMFUNC void computeDshotDMA()
 __RAMFUNC void make_dshot_package(uint16_t com_time)
 {
     uint16_t extended_frame_to_send = 0;
+    shift_amount = 0;  // Clear shift_amount at start of each packet
+
+#ifdef K19XXVK035
+    // For VK035, clear entire GCR buffer at the start to avoid XOR artifacts
+    // from previous packets when buffer_padding changes between modes
+    for (int i = 0; i < 37; i++) {
+        gcr[i] = 0;
+    }
+#endif
 
     if (dshot_extended_telemetry) {
         // Only send extended telemetry if last frame wasn't extended. This ensures eRPM interleaving.
@@ -302,7 +311,6 @@ __RAMFUNC void make_dshot_package(uint16_t com_time)
     if (extended_frame_to_send > 0) {
         dshot_full_number = extended_frame_to_send;
         telem_scheduler.last_sent_extended = 1;
-
     } else {
         if (!running) {
             com_time = 65535;
