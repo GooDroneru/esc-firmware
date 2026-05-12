@@ -1696,11 +1696,11 @@ int main(void)
     read_flash_bin((uint8_t*)(&hardwareInfo), (uint32_t)__device_info_start, sizeof(hardwareInfo));
     if(hardwareInfo.deviceId[4] == '8') //20R
     {
-        deadTime = 30;
+        deadTime = 40;
     }
     else if(hardwareInfo.deviceId[3] == '1') //20R
     {
-        deadTime = 60;
+        deadTime = 80;
     }
 
     gate_drive_offset = deadTime;

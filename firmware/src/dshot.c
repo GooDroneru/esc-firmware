@@ -267,7 +267,7 @@ __RAMFUNC void make_dshot_package(uint16_t com_time)
     uint16_t extended_frame_to_send = 0;
     shift_amount = 0;  // Clear shift_amount at start of each packet
 
-#ifdef K19XXVK035
+#ifdef K19XXVK035 // убирает скачки отображения оборотов
     // For VK035, clear entire GCR buffer at the start to avoid XOR artifacts
     // from previous packets when buffer_padding changes between modes
     for (int i = 0; i < 37; i++) {
@@ -368,8 +368,8 @@ __RAMFUNC void make_dshot_package(uint16_t com_time)
     for (int i = 19; i >= 0; i--) { // each digit in gcrnumber
         gcr[buffer_padding + 20 - i + 1] = ((((gcrnumber & 1 << i)) >> i) ^ (gcr[buffer_padding + 20 - i] >> bitShift))
             << bitShift; // exclusive ored with number before it multiplied by 64 to match
-                  // output timer.
-		  }
-          gcr[buffer_padding] = 0;
+        // output timer.
+    }
+    gcr[buffer_padding] = 0;
 #endif
 }

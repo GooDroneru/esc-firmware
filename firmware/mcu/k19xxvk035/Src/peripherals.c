@@ -317,7 +317,7 @@ void TENKHz_SysTick_Init(void)
 {
     SysTick_Config(5000 - 1);
     NVIC_EnableIRQ(SysTick_IRQn);
-    NVIC_SetPriority(SysTick_IRQn, 0x3);
+    NVIC_SetPriority(SysTick_IRQn, 0xF);
 }
 
 void reloadWatchDogCounter()
@@ -358,7 +358,7 @@ void ALL_GPIO_Init(void)
     RCU->HCLKCFG_bit.GPIOAEN = 1;
     RCU->HRSTCFG_bit.GPIOAEN = 1;
     NVIC_EnableIRQ(GPIOB_IRQn);
-    NVIC_SetPriority(GPIOB_IRQn, 0x0);
+    NVIC_SetPriority(GPIOB_IRQn, 0x2);
 }
 
 extern uint32_t dma_buffer[64];
@@ -410,7 +410,7 @@ void UN_TIM2_Init(void)
     /* источник */
     DMA->ENSET_bit.CH8 = 1; //Включаем канала DMA 1 
     DMA->ENSET_bit.CH12 = 1; //Включаем канала DMA 1 
-    DMA_CONFIGDATA.PRM_DATA.CH[12].SRC_DATA_END_PTR = (uint32_t)&(gcr[36]); //Адрес источника данных 
+    DMA_CONFIGDATA.PRM_DATA.CH[12].SRC_DATA_END_PTR = (uint32_t)&(gcr[23 + buffer_padding - 1]); //Адрес источника данных 
     DMA_CONFIGDATA.PRM_DATA.CH[12].CHANNEL_CFG_bit.SRC_SIZE = DMA_CHANNEL_CFG_SRC_SIZE_Word; //Разрядность данных источника
     DMA_CONFIGDATA.PRM_DATA.CH[12].CHANNEL_CFG_bit.SRC_INC =  DMA_CHANNEL_CFG_DST_INC_Word; // Не инкрементируем
     /* приемник */
@@ -419,7 +419,7 @@ void UN_TIM2_Init(void)
     DMA_CONFIGDATA.PRM_DATA.CH[12].CHANNEL_CFG_bit.DST_INC = DMA_CHANNEL_CFG_DST_INC_None; //Инкрементируем на байт
     /* общее */
     DMA_CONFIGDATA.PRM_DATA.CH[12].CHANNEL_CFG_bit.R_POWER = 0x0; // Количество передач до переарбитрации
-    DMA_CONFIGDATA.PRM_DATA.CH[12].CHANNEL_CFG_bit.N_MINUS_1 = 37 - 1; //Общее количество передач DMA
+    DMA_CONFIGDATA.PRM_DATA.CH[12].CHANNEL_CFG_bit.N_MINUS_1 = 23 + buffer_padding - 1; //Общее количество передач DMA
     DMA_CONFIGDATA.PRM_DATA.CH[12].CHANNEL_CFG_bit.CYCLE_CTRL = DMA_CHANNEL_CFG_CYCLE_CTRL_Basic; //Задание типа цикла DMA 
 
     DMA_CONFIGDATA.PRM_DATA.CH[8].SRC_DATA_END_PTR = (uint32_t)(&TMR3->VALUE); //Адрес источника данных 
@@ -436,7 +436,7 @@ void UN_TIM2_Init(void)
 
 
     NVIC_EnableIRQ(ADC_SEQ1_IRQn);
-    NVIC_SetPriority(ADC_SEQ1_IRQn, 2);
+    NVIC_SetPriority(ADC_SEQ1_IRQn, 3);
     //DMA->USEBURSTSET_bit.CH8 = 1;
     // Инциализация контроллера DMA
 
@@ -472,8 +472,9 @@ __RAMFUNC void updateDmaTransmit() {
   NVIC_SetPriority(DMA_CH12_IRQn, 0x20);
   DMA->ENSET_bit.CH8 = 0;
   DMA_CONFIGDATA.PRM_DATA.CH[12].CHANNEL_CFG_bit.R_POWER = 0x0; // Количество передач до переарбитрации
-  DMA_CONFIGDATA.PRM_DATA.CH[12].CHANNEL_CFG_bit.N_MINUS_1 = 37-1; //Общее количество передач DMA
+  DMA_CONFIGDATA.PRM_DATA.CH[12].CHANNEL_CFG_bit.N_MINUS_1 = 23 + buffer_padding - 1; //Общее количество передач DMA
   DMA_CONFIGDATA.PRM_DATA.CH[12].CHANNEL_CFG_bit.CYCLE_CTRL = DMA_CHANNEL_CFG_CYCLE_CTRL_Basic; //Задание типа цикла DMA 
+  DMA_CONFIGDATA.PRM_DATA.CH[12].SRC_DATA_END_PTR = (uint32_t)&(gcr[23 + buffer_padding - 1]); //Адрес источника данных 
   DMA->ENSET_bit.CH12 = 1;
 }
 
