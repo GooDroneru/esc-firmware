@@ -317,7 +317,7 @@ uint32_t start_process = 0;
 uint16_t one_khz_loop_counter = 0;
 uint16_t target_e_com_time_high;
 uint16_t target_e_com_time_low;
-uint8_t compute_dshot_flag = 0;
+volatile uint8_t compute_dshot_flag = 0;
 uint8_t crsf_input_channel = 1;
 uint8_t crsf_output_PWM_channel = 2;
 uint8_t telemetry_interval_ms = 30;
@@ -1790,7 +1790,7 @@ int main(void)
 #endif
 // #ifndef DEBUG_MODE
     zero_input_count = 0;
-    MX_IWDG_Init();
+    //MX_IWDG_Init();
     RELOAD_WATCHDOG_COUNTER();
 // #endif
 #ifdef USE_CRSF_INPUT

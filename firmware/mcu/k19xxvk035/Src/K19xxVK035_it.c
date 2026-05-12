@@ -129,7 +129,7 @@ __RAMFUNC void TMR0_IRQHandler(void)
 
 __RAMFUNC void DMA_CH8_IRQHandler()
 {   
-    TMR3->VALUE = 0xFFFFFFFF;
+    IC_TIMER->VALUE = 0xFFFFFFFF;
     reverseBuffer();
     transfercomplete();
     input_ready = 1;

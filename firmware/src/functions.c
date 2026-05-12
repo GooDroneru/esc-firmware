@@ -73,7 +73,7 @@ static inline uint16_t get_timer_us16(void) {
 void delayMicros(uint32_t micros)
 {
 #if defined(K19XXVK035)
-    DELAY_TIMER->VALUE = micros * 100;
+    DELAY_TIMER->VALUE = micros * 48;
     DELAY_TIMER->CTRL_bit.ON = 1;
     while (DELAY_TIMER->VALUE != 0) {
         asm("nop");

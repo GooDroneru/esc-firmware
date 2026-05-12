@@ -5202,13 +5202,15 @@
 #ifdef MCU_K19XXVK035
 #define HARDWARE_GROUP_K19XXVK035
 #define K19XXVK035
-#define CPU_FREQUENCY_MHZ        100
+#define CPU_FREQUENCY_MHZ        48
 //#define EEPROM_START_ADD        (uint32_t)0x0000F000
-#define INTERVAL_TIMER           TMR1
-#define INTERVAL_TIMER_EN        TMR1EN
+#define INTERVAL_TIMER           TMR2
+#define INTERVAL_TIMER_EN        TMR2EN
 #define TEN_KHZ_TIMER            SysTick
-#define DELAY_TIMER              TMR2
-#define DELAY_TIMER_EN           TMR2EN
+#define DELAY_TIMER              TMR3
+#define DELAY_TIMER_EN           TMR3EN
+#define IC_TIMER                 TMR1
+#define IC_TIMER_EN              TMR1EN
 #define UTILITY_TIMER            NULL
 #define COM_TIMER                TMR0
 #define COM_TIMER_EN             TMR0EN

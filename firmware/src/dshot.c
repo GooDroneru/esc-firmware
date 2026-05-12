@@ -64,15 +64,18 @@ uint16_t dshot_badcounts;
 uint8_t dshot_extended_telemetry = 0;
 uint16_t processtime = 0;
 uint16_t halfpulsetime = 0;
-uint16_t periodTime = 256;
-uint16_t bitShift = 8;
+uint16_t periodTime = 128;
+uint16_t bitShift = 7;
 
 uint8_t programming_mode;
 uint16_t position;
 uint8_t  new_byte;
+extern uint32_t rawBuffer[64];
 
 __RAMFUNC void computeDshotDMA()
-{
+{   
+    rawBuffer[64];
+
     dshot_frametime = dma_buffer[31] - dma_buffer[0];
     halfpulsetime = dshot_frametime >> 5;
     if ((dshot_frametime > dshot_frametime_low) && (dshot_frametime < dshot_frametime_high)) {
@@ -256,6 +259,7 @@ __RAMFUNC void computeDshotDMA()
 				}
 			}
         } else {
+            GPIOB->DATAOUTTGL_bit.PIN10 = 1;
 			dshot_badcounts++;
             programming_mode = 0;
 		}

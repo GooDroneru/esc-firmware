@@ -52,35 +52,59 @@ void setAutoReloadPWM(uint16_t relval)
 
 void setPrescalerPWM(uint16_t presc){
   if(presc == 0) {  
-    PWM0->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div2;        //12 KHz
-    PWM1->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div2;        //12 KHz
-    PWM2->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div2;        //12 KHz
+    PWM0->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div1;        //12 KHz
+    PWM1->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div1;        //12 KHz
+    PWM2->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div1;        //12 KHz
     PWM0->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div1; //48 KHz
     PWM1->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div1; //48 KHz
     PWM2->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div1; //48 KHz
   }
   if(presc == 10) {  
-    PWM0->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div10; 
-    PWM1->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div10;
-    PWM2->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div10;
+    PWM0->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div6; 
+    PWM1->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div6;
+    PWM2->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div6;
   }
   else if(presc == 20) {
-    PWM0->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div2;    
-    PWM1->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div2;   
-    PWM2->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div2;   
+    PWM0->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div1;    
+    PWM1->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div1;   
+    PWM2->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div1;   
     PWM0->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div10; 
     PWM1->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div10;
     PWM2->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div10;
   }
   else if(presc == 25) {
-    PWM0->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div2;    
-    PWM1->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div2;   
-    PWM2->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div2;   
+    PWM0->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div1;    
+    PWM1->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div1;   
+    PWM2->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div1;   
     PWM0->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div12; 
     PWM1->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div12;
     PWM2->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div12;
   }
   else if(presc == 30) {
+    PWM0->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div1;    
+    PWM1->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div1;   
+    PWM2->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div1;   
+    PWM0->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div14; 
+    PWM1->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div14;
+    PWM2->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div14;
+  }
+  else if(presc == 40) {
+    PWM0->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div2;    
+    PWM1->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div2;   
+    PWM2->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div2;   
+    PWM0->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div10; 
+    PWM1->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div10;
+    PWM2->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div10;
+  }
+  else if(presc == 50) {
+    PWM0->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div2;    
+    PWM1->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div2;   
+    PWM2->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div2;   
+    PWM0->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div12; 
+    PWM1->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div12;
+    PWM2->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div12;
+  }
+  else if(presc == 55) {
     PWM0->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div2;    
     PWM1->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div2;   
     PWM2->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div2;   
@@ -88,66 +112,34 @@ void setPrescalerPWM(uint16_t presc){
     PWM1->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div14;
     PWM2->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div14;
   }
-  else if(presc == 40) {
-    PWM0->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div4;    
-    PWM1->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div4;   
-    PWM2->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div4;   
-    PWM0->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div10; 
-    PWM1->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div10;
-    PWM2->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div10;
-  }
-  else if(presc == 50) {
-    PWM0->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div4;    
-    PWM1->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div4;   
-    PWM2->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div4;   
-    PWM0->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div12; 
-    PWM1->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div12;
-    PWM2->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div12;
-  }
-  else if(presc == 55) {
-    PWM0->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div4;    
-    PWM1->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div4;   
-    PWM2->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div4;   
-    PWM0->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div14; 
-    PWM1->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div14;
-    PWM2->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div14;
-  }
   else if(presc == 60) {
-    PWM0->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div8;    
-    PWM1->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div8;   
-    PWM2->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div8;   
-    PWM0->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div8; 
-    PWM1->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div8;
-    PWM2->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div8;
-  }
-  else if(presc == 60) {
-    PWM0->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div8;    
-    PWM1->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div8;   
-    PWM2->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div8;   
+    PWM0->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div4;    
+    PWM1->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div4;   
+    PWM2->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div4;   
     PWM0->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div8; 
     PWM1->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div8;
     PWM2->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div8;
   }
   else if(presc == 70) {
-    PWM0->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div8;    
-    PWM1->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div8;   
-    PWM2->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div8;   
+    PWM0->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div4;    
+    PWM1->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div4;   
+    PWM2->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div4;   
     PWM0->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div10; 
     PWM1->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div10;
     PWM2->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div10;
   }
   else if(presc == 80) {
-    PWM0->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div8;    
-    PWM1->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div8;   
-    PWM2->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div8;   
+    PWM0->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div4;    
+    PWM1->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div4;   
+    PWM2->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div4;   
     PWM0->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div12; 
     PWM1->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div12;
     PWM2->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div12;
   }
   else if(presc == 90) {
-    PWM0->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div8;    
-    PWM1->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div8;   
-    PWM2->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div8;   
+    PWM0->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div4;    
+    PWM1->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div4;   
+    PWM2->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div4;   
     PWM0->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div14; 
     PWM1->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div14;
     PWM2->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div14;
@@ -235,11 +227,11 @@ void PWM_TIM1_Init(void)  //PWM
     RCU->PRSTCFG_bit.PWM1EN = 1;
     RCU->PCLKCFG_bit.PWM2EN = 1;
     RCU->PRSTCFG_bit.PWM2EN = 1;
-    PWM0->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div2;        //48 KHz
+    PWM0->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div1;        //48 KHz
     PWM0->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div1; //48 KHz
-    PWM1->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div2;        //48 KHz
+    PWM1->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div1;        //48 KHz
     PWM1->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div1; //48 KHz
-    PWM2->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div2;        //48 KHz
+    PWM2->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div1;        //48 KHz
     PWM2->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div1; //48 KHz 
     PWM0->ETSEL_bit.SOCAEN = 1; 
     PWM0->ETSEL_bit.SOCASEL = PWM_ETSEL_INTSEL_CTREqZero; 
@@ -297,25 +289,25 @@ void enableComTimerInt()
 
 uint16_t getintervaTimerCount()
 {
-  uint16_t temp = (0xFFFFFFFF - INTERVAL_TIMER->VALUE) / 50;
+  uint16_t temp = (0xFFFFFFFF - INTERVAL_TIMER->VALUE) / 24;
   return temp;
 }
 
 void setintervaTimerCount(uint16_t intertime)
 {
-    INTERVAL_TIMER->VALUE = (0xFFFFFFFF - (intertime * 50));
+    INTERVAL_TIMER->VALUE = (0xFFFFFFFF - (intertime * 24));
 }
 
 void setAndEnableComInt(uint16_t time)
 {
-    COM_TIMER->VALUE = time * 50;
+    COM_TIMER->VALUE = time * 24;
     COM_TIMER->INTSTATUS_bit.INT = 1;
     COM_TIMER->CTRL_bit.INTEN = 1;
 }
 
 void TENKHz_SysTick_Init(void) 
 {
-    SysTick_Config(5000 - 1);
+    SysTick_Config(2400 - 1);
     NVIC_EnableIRQ(SysTick_IRQn);
     NVIC_SetPriority(SysTick_IRQn, 0xF);
 }
@@ -361,14 +353,15 @@ void ALL_GPIO_Init(void)
     NVIC_SetPriority(GPIOB_IRQn, 0x2);
 }
 
-extern uint32_t dma_buffer[64];
+extern volatile uint32_t dma_buffer[64];
 uint32_t rawBuffer[64] __attribute__((section(".ram_section"))) __attribute__((aligned(4))) = { 0 };
 static volatile DMA_CtrlData_TypeDef DMA_CONFIGDATA __attribute__((aligned(1024)));
 extern uint32_t gcr[37];
-uint32_t gcrTest[3] = {123, 32, 22};
 
 void UN_TIM2_Init(void) 
-{
+{ 
+    RCU->PCLKCFG_bit.ECAP1EN = 0;
+    RCU->PRSTCFG_bit.ECAP1EN = 0;
     RCU->PCLKCFG_bit.ECAP1EN = 1;
     RCU->PRSTCFG_bit.ECAP1EN = 1;
     RCU->HCLKCFG_bit.GPIOAEN = 1;
@@ -388,12 +381,13 @@ void UN_TIM2_Init(void)
     // GPIOA->ALTFUNCCLR_bit.PIN7 = 1;
     // GPIOA->DENSET_bit.PIN7 = 1;
     // GPIOA->OUTENSET_bit.PIN7 = 1;
-
-    RCU->PCLKCFG_bit.TMR3EN = 1;
-    RCU->PRSTCFG_bit.TMR3EN = 1;
-    TMR3->VALUE = 0xFFFFFFFF;
-    TMR3->LOAD = 0xFFFFFFFF;
-    //TMR3->CTRL_bit.ON = 1;
+    RCU->PCLKCFG_bit.IC_TIMER_EN = 0;
+    RCU->PRSTCFG_bit.IC_TIMER_EN = 0;
+    RCU->PCLKCFG_bit.IC_TIMER_EN = 1;
+    RCU->PRSTCFG_bit.IC_TIMER_EN = 1;
+    IC_TIMER->VALUE = 0xFFFFFFFF;
+    IC_TIMER->LOAD = 0xFFFFFFFF;
+    //IC_TIMER->CTRL_bit.ON = 1;
 
     DMA->BASEPTR = (uint32_t)(&DMA_CONFIGDATA); 
 
@@ -422,7 +416,7 @@ void UN_TIM2_Init(void)
     DMA_CONFIGDATA.PRM_DATA.CH[12].CHANNEL_CFG_bit.N_MINUS_1 = 23 + buffer_padding - 1; //Общее количество передач DMA
     DMA_CONFIGDATA.PRM_DATA.CH[12].CHANNEL_CFG_bit.CYCLE_CTRL = DMA_CHANNEL_CFG_CYCLE_CTRL_Basic; //Задание типа цикла DMA 
 
-    DMA_CONFIGDATA.PRM_DATA.CH[8].SRC_DATA_END_PTR = (uint32_t)(&TMR3->VALUE); //Адрес источника данных 
+    DMA_CONFIGDATA.PRM_DATA.CH[8].SRC_DATA_END_PTR = (uint32_t)(&IC_TIMER->VALUE); //Адрес источника данных 
     DMA_CONFIGDATA.PRM_DATA.CH[8].CHANNEL_CFG_bit.SRC_SIZE = DMA_CHANNEL_CFG_SRC_SIZE_Word; //Разрядность данных источника
     DMA_CONFIGDATA.PRM_DATA.CH[8].CHANNEL_CFG_bit.SRC_INC =  DMA_CHANNEL_CFG_SRC_INC_None; // Не инкрементируем
     /* приемник */
@@ -484,9 +478,9 @@ __RAMFUNC void setDmaCnt(uint8_t size) {
 }
 
 __RAMFUNC void reverseBuffer() {
-  for(uint8_t i = 0; i < 32; i++) {
-    dma_buffer[i] = 0xFFFFFFFF - rawBuffer[i];
-  }
+for(uint8_t i = 0; i < 32; i++) {
+    dma_buffer[i] = ~rawBuffer[i];
+}
 }
 
 
