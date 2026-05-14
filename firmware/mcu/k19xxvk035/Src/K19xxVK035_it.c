@@ -55,7 +55,7 @@ void HardFault_Handler(void)
     }
 }
 
-__RAMFUNC void UART0_TD_IRQHandler(void)
+void UART0_TD_IRQHandler(void)
 {      
     if(UART0->RIS_bit.TDRIS) {
         UART0->ICR_bit.TDIC = 1;
@@ -64,12 +64,12 @@ __RAMFUNC void UART0_TD_IRQHandler(void)
     }
 }
 
-__RAMFUNC void SysTick_Handler(void)
+void SysTick_Handler(void)
 {
     tenKhzRoutine();
 }
 
-__RAMFUNC void ADC_SEQ0_IRQHandler()
+void ADC_SEQ0_IRQHandler()
 {   
     ADC_SEQ_ITStatusClear(ADC_SEQ_Num_0);
     while (ADC_SEQ_GetFIFOLoad(ADC_SEQ_Num_0)) {
@@ -84,7 +84,7 @@ __RAMFUNC void ADC_SEQ0_IRQHandler()
     }
 }
 
-__RAMFUNC void GPIOB_IRQHandler()
+void GPIOB_IRQHandler()
 {   
     if (step == 1 || step == 4)
     {   // c floating
@@ -118,7 +118,7 @@ __RAMFUNC void GPIOB_IRQHandler()
     return;
 }
 
-__RAMFUNC void TMR0_IRQHandler(void)
+void TMR0_IRQHandler(void)
 {
     //if(COM_TIMER->INTSTATUS_bit.INT && COM_TIMER->CTRL_bit.INTEN) {
         COM_TIMER->INTSTATUS_bit.INT = 1;
@@ -127,7 +127,7 @@ __RAMFUNC void TMR0_IRQHandler(void)
 }
 
 
-__RAMFUNC void DMA_CH8_IRQHandler()
+void DMA_CH8_IRQHandler()
 {   
     IC_TIMER->VALUE = 0xFFFFFFFF;
     reverseBuffer();
@@ -137,13 +137,13 @@ __RAMFUNC void DMA_CH8_IRQHandler()
     __NVIC_SetPendingIRQ(ADC_SEQ1_IRQn);
 }
 
-__RAMFUNC void DMA_CH12_IRQHandler()
+void DMA_CH12_IRQHandler()
 {   
     IC_TIMER_REGISTER->CMPSHDW = 0;
     transfercomplete();
 }
 
-__RAMFUNC void ADC_SEQ1_IRQHandler() {
+void ADC_SEQ1_IRQHandler() {
     ADC_SEQ_ITStatusClear(ADC_SEQ_Num_1);
     processDshot();
 }

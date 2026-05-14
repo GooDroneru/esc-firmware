@@ -25,7 +25,7 @@ extern char fallingEdgeTrigger;
 extern uint16_t periodTime;
 extern uint16_t bitShift;
 
-__RAMFUNC void changeToInput()
+void changeToInput()
 {
     GPIOA->ALTFUNCCLR_bit.PIN5 = 1;
     updateDma();
@@ -43,7 +43,7 @@ __RAMFUNC void changeToInput()
 
 
 
-__RAMFUNC void receiveDshotDma()
+void receiveDshotDma()
 {   
     if(servoPwm == 1) {
         //GPIOA->INTEDGECLR_bit.PIN5 = 1;
@@ -55,7 +55,7 @@ __RAMFUNC void receiveDshotDma()
 
 }
 
-__RAMFUNC void changeToOutput()
+void changeToOutput()
 {
     updateDmaTransmit();
     IC_TIMER->CTRL_bit.ON = 0;
@@ -74,7 +74,7 @@ __RAMFUNC void changeToOutput()
     IC_TIMER->CTRL_bit.ON = 1;
 }
 
-__RAMFUNC void sendDshotDma()
+void sendDshotDma()
 {
     out_put = 1;
     changeToOutput();

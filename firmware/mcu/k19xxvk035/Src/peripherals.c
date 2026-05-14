@@ -209,11 +209,11 @@ void ALL_COMP_Init(void)
 
 void MX_IWDG_Init(void)
 {
-    RCU->WDTCFG_bit.CLKEN = 1;
-    RCU->WDTCFG_bit.RSTDIS = 1;
-    WDT->LOAD = 200000;
-    WDT->CTRL_bit.INTEN = 1;
-    WDT->CTRL_bit.RESEN = 1;
+    // RCU->WDTCFG_bit.CLKEN = 1;
+    // RCU->WDTCFG_bit.RSTDIS = 1;
+    // WDT->LOAD = 200000;
+    // WDT->CTRL_bit.INTEN = 1;
+    // WDT->CTRL_bit.RESEN = 1;
 }
 
 void PWM_TIM1_Init(void)  //PWM
@@ -307,7 +307,7 @@ void setAndEnableComInt(uint16_t time)
 
 void TENKHz_SysTick_Init(void) 
 {
-    SysTick_Config(2400 - 1);
+    SysTick_Config(4800 - 1);
     NVIC_EnableIRQ(SysTick_IRQn);
     NVIC_SetPriority(SysTick_IRQn, 0xF);
 }
@@ -354,7 +354,7 @@ void ALL_GPIO_Init(void)
 }
 
 extern volatile uint32_t dma_buffer[64];
-uint32_t rawBuffer[64] __attribute__((section(".ram_section"))) __attribute__((aligned(4))) = { 0 };
+uint32_t rawBuffer[64];
 static volatile DMA_CtrlData_TypeDef DMA_CONFIGDATA __attribute__((aligned(1024)));
 extern uint32_t gcr[37];
 
@@ -448,7 +448,7 @@ void UN_TIM2_Init(void)
    // DMA->CFG_bit.MASTEREN = 1; //Бит разрешения работы контролера DMA
 }
 
-__RAMFUNC void updateDma() {
+void updateDma() {
   NVIC_DisableIRQ(DMA_CH12_IRQn); 
   NVIC_EnableIRQ(DMA_CH8_IRQn); 
   NVIC_SetPriority(DMA_CH8_IRQn, 0x20);
@@ -460,7 +460,7 @@ __RAMFUNC void updateDma() {
   DMA->ENSET_bit.CH8 = 1;
 }
 
-__RAMFUNC void updateDmaTransmit() {
+void updateDmaTransmit() {
   NVIC_DisableIRQ(DMA_CH8_IRQn); 
   NVIC_EnableIRQ(DMA_CH12_IRQn); 
   NVIC_SetPriority(DMA_CH12_IRQn, 0x20);
@@ -472,12 +472,12 @@ __RAMFUNC void updateDmaTransmit() {
   DMA->ENSET_bit.CH12 = 1;
 }
 
-__RAMFUNC void setDmaCnt(uint8_t size) {
+void setDmaCnt(uint8_t size) {
   DMA_CONFIGDATA.PRM_DATA.CH[8].DST_DATA_END_PTR = (uint32_t )&(rawBuffer[buffersize - 1]);
   DMA_CONFIGDATA.PRM_DATA.CH[8].CHANNEL_CFG_bit.N_MINUS_1 = buffersize - 1;
 }
 
-__RAMFUNC void reverseBuffer() {
+void reverseBuffer() {
 for(uint8_t i = 0; i < 32; i++) {
     dma_buffer[i] = ~rawBuffer[i];
 }
