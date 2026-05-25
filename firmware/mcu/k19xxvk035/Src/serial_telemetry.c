@@ -16,10 +16,10 @@ UART_Init_TypeDef UART_InitStruct;
 
 void send_telem_DMA(uint8_t bytes)
 {   
-    // GPIO_AltFuncCmd(GPIOB, GPIO_Pin_10, ENABLE);
-    // for(uint8_t i = 0; i < bytes; i++) {
-    //     UART0->DR = aTxBuffer[i];
-    // }
+    GPIO_AltFuncCmd(GPIOB, GPIO_Pin_10, ENABLE);
+    for(uint8_t i = 0; i < bytes; i++) {
+        UART0->DR = aTxBuffer[i];
+    }
 }
 
 void telem_UART_Init(void)
@@ -27,9 +27,8 @@ void telem_UART_Init(void)
     RCU_AHBClkCmd(RCU_AHBClk_GPIOB, ENABLE);
     RCU_AHBRstCmd(RCU_AHBRst_GPIOB, ENABLE);
     GPIO_DigitalCmd(GPIOB, GPIO_Pin_10, ENABLE);
-    // GPIOB->PULLMODE_bit.PIN10 = 1;
-    //GPIO_AltFuncCmd(GPIOB, GPIO_Pin_10, DISABLE);
-	GPIOB->OUTENSET_bit.PIN10 = 1;
+    GPIOB->PULLMODE_bit.PIN10 = 1;
+    GPIO_AltFuncCmd(GPIOB, GPIO_Pin_10, DISABLE);
     RCU_UARTClkConfig(UART0_Num, RCU_PeriphClk_PLLClk, 0, DISABLE);
     RCU_UARTClkCmd(UART0_Num, ENABLE);
     RCU_UARTRstCmd(UART0_Num, ENABLE);

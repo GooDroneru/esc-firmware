@@ -209,11 +209,11 @@ void ALL_COMP_Init(void)
 
 void MX_IWDG_Init(void)
 {
-    // RCU->WDTCFG_bit.CLKEN = 1;
-    // RCU->WDTCFG_bit.RSTDIS = 1;
-    // WDT->LOAD = 200000;
-    // WDT->CTRL_bit.INTEN = 1;
-    // WDT->CTRL_bit.RESEN = 1;
+    RCU->WDTCFG_bit.CLKEN = 1;
+    RCU->WDTCFG_bit.RSTDIS = 1;
+    WDT->LOAD = 200000;
+    WDT->CTRL_bit.INTEN = 1;
+    WDT->CTRL_bit.RESEN = 1;
 }
 
 void PWM_TIM1_Init(void)  //PWM
@@ -307,7 +307,7 @@ void setAndEnableComInt(uint16_t time)
 
 void TENKHz_SysTick_Init(void) 
 {
-    SysTick_Config(4800 - 1);
+    SysTick_Config(2400 - 1);
     NVIC_EnableIRQ(SysTick_IRQn);
     NVIC_SetPriority(SysTick_IRQn, 0xF);
 }

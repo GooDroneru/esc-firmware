@@ -233,15 +233,15 @@ __RAMFUNC void computeDshotDMA()
 					//	NVIC_SystemReset();
 						break;
 					case 13:
-						dshot_extended_telemetry = 1;
-                        send_EDT_init = 1;
-						if (EDT_ARM_ENABLE == 1) {
-							EDT_ARMED = 1;
-						}
+						// dshot_extended_telemetry = 1;
+                        // send_EDT_init = 1;
+						// if (EDT_ARM_ENABLE == 1) {
+						// 	EDT_ARMED = 1;
+						// }
 						break;
 					case 14:
-						dshot_extended_telemetry = 0;
-                        send_EDT_deinit = 1;
+						// dshot_extended_telemetry = 0;
+                        // send_EDT_deinit = 1;
 						break;
 					case 20:
 						forward = 1 - eepromBuffer.dir_reversed;
@@ -259,7 +259,6 @@ __RAMFUNC void computeDshotDMA()
 				}
 			}
         } else {
-            GPIOB->DATAOUTTGL_bit.PIN10 = 1;
 			dshot_badcounts++;
             programming_mode = 0;
 		}
