@@ -150,7 +150,11 @@ void startADCConversion()
 }
 int16_t getConvertedDegrees(uint16_t adcrawtemp)
 {
+#ifdef USE_NTC
+    return getNTCDegrees(ADC_raw_ntc);
+#else
     return TempSensor_Volt_To_Temper(ADC_raw_temp * 3300 / 4096);  //maybe 4096 is better
+#endif
 }
 
 #endif // USE_ADC

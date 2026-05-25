@@ -230,15 +230,19 @@ __RAMFUNC void computeDshotDMA()
 					//	NVIC_SystemReset();
 						break;
 					case 13:
+#ifdef K19XXVK035
 						dshot_extended_telemetry = 1;
                         send_EDT_init = 1;
 						if (EDT_ARM_ENABLE == 1) {
 							EDT_ARMED = 1;
 						}
+#endif
 						break;
 					case 14:
+#ifdef K19XXVK035
 						dshot_extended_telemetry = 0;
                         send_EDT_deinit = 1;
+#endif
 						break;
 					case 20:
 						forward = 1 - eepromBuffer.dir_reversed;
