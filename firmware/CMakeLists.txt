@@ -24,7 +24,7 @@ endif()
 
 include(${CMAKE_DIR}/common.cmake)
 
-project(esc-firmware VERSION 2.0 LANGUAGES C ASM)
+project(esc-firmware VERSION 2.1 LANGUAGES C ASM)
 
 # ---------------------------------------------------------------------------
 # Platform SDK
