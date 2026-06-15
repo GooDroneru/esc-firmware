@@ -485,7 +485,7 @@ __RAMFUNC void setDmaCnt(uint8_t size) {
 
 __RAMFUNC void reverseBuffer() {
   for(uint8_t i = 0; i < 32; i++) {
-    dma_buffer[i] = 0xFFFFFFFF - rawBuffer[i];
+    dma_buffer[i] = ~rawBuffer[i];
   }
 }
 

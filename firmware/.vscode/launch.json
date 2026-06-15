@@ -158,21 +158,21 @@
             "executable": "${command:cmake.launchTargetPath}",
             "request": "attach",
             "type": "cortex-debug",
-            "showDevDebugOutput": "raw",
             "servertype": "openocd",
-            "gdbPath": "${workspaceFolder}/../../dependencies/tools/arm/xpack-arm-none-eabi-gcc-14.2.1-1.1/bin/arm-none-eabi-gdb",
-            "objdumpPath": "${workspaceFolder}/../../dependencies/tools/arm/xpack-arm-none-eabi-gcc-14.2.1-1.1/bin/arm-none-eabi-objdump",
-            "toolchainPrefix": "arm-none-eabi",
-            "serverpath": "${workspaceFolder}/../../dependencies/tools/openocd/vk035/xpack-openocd-k1921vk-0.12.0-k1921vk/bin/openocd",
-            "svdFile": "${workspaceFolder}/../../dependencies/tools/openocd/vk035/scripts/K1921VK035.svd",
-            "device": "k1921vk035",
-            "searchDir": [
-                "${workspaceFolder}/../../dependencies/tools/openocd/vk035",
-                "${workspaceFolder}/../../dependencies/tools/openocd/vk035/xpack-openocd-k1921vk-0.12.0-k1921vk/openocd/scripts"
-            ],
+            "serverpath": "/usr/local/bin/openocd",
+            "openOCDPath": "/usr/local/bin/openocd",
+            "gdbPath": "/Users/alex/Library/xPacks/@xpack-dev-tools/arm-none-eabi-gcc/14.2.1-1.1.1/.content/bin/arm-none-eabi-gdb",
             "configFiles": [
-                "${workspaceFolder}/../../dependencies/tools/openocd/vk035/scripts/connect_stlink.cfg"
-            ]
+                "/usr/local/share/openocd/scripts/interface/stlink.cfg",
+                "/usr/local/share/openocd/scripts/target/k1921vk035.cfg"
+            ],
+            "device": "k1921vk035",
+            "runToEntryPoint": "main",
+            "searchDir": [
+                "${workspaceRoot}"
+            ],
+            "showDevDebugOutput": "raw",
+            "svdFile": "${workspaceRoot}/K1921VK035.svd"
         },
         {
             "name": "Debug VK035 (Linux)",
@@ -180,22 +180,21 @@
             "executable": "${command:cmake.launchTargetPath}",
             "request": "launch",
             "type": "cortex-debug",
-            "runToEntryPoint": "main",
-            "showDevDebugOutput": "raw",
             "servertype": "openocd",
-            "gdbPath": "${workspaceFolder}/../../dependencies/tools/arm/xpack-arm-none-eabi-gcc-14.2.1-1.1/bin/arm-none-eabi-gdb",
-            "objdumpPath": "${workspaceFolder}/../../dependencies/tools/arm/xpack-arm-none-eabi-gcc-14.2.1-1.1/bin/arm-none-eabi-objdump",
-            "toolchainPrefix": "arm-none-eabi",
-            "serverpath": "${workspaceFolder}/../../dependencies/tools/openocd/vk035/xpack-openocd-k1921vk-0.12.0-k1921vk/bin/openocd",
-            "svdFile": "${workspaceFolder}/../../dependencies/tools/openocd/vk035/scripts/K1921VK035.svd",
-            "device": "k1921vk035",
-            "searchDir": [
-                "${workspaceFolder}/../../dependencies/tools/openocd/vk035",
-                "${workspaceFolder}/../../dependencies/tools/openocd/vk035/xpack-openocd-k1921vk-0.12.0-k1921vk/openocd/scripts"
-            ],
+            "serverpath": "/usr/local/bin/openocd",
+            "openOCDPath": "/usr/local/bin/openocd",
+            "gdbPath": "/Users/alex/Library/xPacks/@xpack-dev-tools/arm-none-eabi-gcc/14.2.1-1.1.1/.content/bin/arm-none-eabi-gdb",
             "configFiles": [
-                "${workspaceFolder}/../../dependencies/tools/openocd/vk035/scripts/connect_stlink.cfg"
-            ]
-        }
+                "/usr/local/share/openocd/scripts/interface/stlink.cfg",
+                "/usr/local/share/openocd/scripts/target/k1921vk035.cfg"
+            ],
+            "device": "k1921vk035",
+            "runToEntryPoint": "main",
+            "searchDir": [
+                "${workspaceRoot}"
+            ],
+            "showDevDebugOutput": "raw",
+            "svdFile": "${workspaceRoot}/K1921VK035.svd"
+        },
     ]
 }
