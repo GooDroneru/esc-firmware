@@ -32,14 +32,14 @@ void ADC_DMA_Callback()
     ADC_raw_input = ADCDataDMA[0];
 
 #else
-    ADC_raw_temp =    ADCDataDMA[2];
+    //ADC_raw_temp =    ADCDataDMA[2];
 #ifdef PA6_VOLTAGE
     ADC_raw_volts = ADCDataDMA[1]; 
     ADC_raw_ntc = ADCDataDMA[0];
 #else
-    ADC_raw_volts = ADCDataDMA[0];
-    ADC_raw_current = ADCDataDMA[1];
-    ADC_raw_ntc = ADCDataDMA[2];
+    //ADC_raw_volts = ADCDataDMA[0];
+    //ADC_raw_current = ADCDataDMA[1];
+    ADC_raw_ntc = ADCDataDMA[0];
 #endif
 #endif
 }
