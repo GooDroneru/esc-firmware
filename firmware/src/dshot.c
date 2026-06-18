@@ -51,13 +51,13 @@ uint32_t gcrnumber;
 extern int zero_crosses;
 extern char send_telemetry;
 extern uint8_t max_duty_cycle_change;
-int dshot_full_number;
+int volatile dshot_full_number;
 extern char play_tone_flag;
 extern char send_esc_info_flag;
 uint8_t command_count = 0;
 uint8_t last_command = 0;
 uint8_t high_pin_count = 0;
-uint32_t gcr[37] = { 0 };
+uint32_t volatile gcr[37] = { 0 };
 uint16_t dshot_frametime;
 uint16_t dshot_goodcounts;
 uint16_t dshot_badcounts;
@@ -128,7 +128,7 @@ __RAMFUNC void computeDshotDMA()
 			signaltimeout = 0;
 			dshot_goodcounts++;
             if (dpulse[11] == 1) {
-                send_telemetry = 1;
+        send_telemetry = 1;
 			}
             if(programming_mode > 0){  
                 if(programming_mode == 1){ // begin programming mode
@@ -290,15 +290,15 @@ __RAMFUNC void make_dshot_package(uint16_t com_time)
             telem_scheduler.temp_count++;
 
             if (telem_scheduler.current_count >= CURRENT_EDT_RATE_DIVISOR) {
-                extended_frame_to_send = 0b0110 << 8 | (uint8_t)(actual_current / 50);
+                extended_frame_to_send = (0b0110 << 8) | (uint8_t)(actual_current / 50);
                 telem_scheduler.current_count = 0;
             }
             else if (telem_scheduler.voltage_count >= VOLTAGE_EDT_RATE_DIVISOR) {
-                extended_frame_to_send = 0b0100 << 8 | (uint8_t)(battery_voltage / 25);
+                extended_frame_to_send = (0b0100 << 8) | (uint8_t)(battery_voltage / 25);
                 telem_scheduler.voltage_count = 0;
             }
             else if (telem_scheduler.temp_count >= TEMP_EDT_RATE_DIVISOR) {
-                extended_frame_to_send = 0b0010 << 8 | degrees_celsius;
+                extended_frame_to_send = (0b0010 << 8) | degrees_celsius;
                 telem_scheduler.temp_count = 0;
             }
         }
