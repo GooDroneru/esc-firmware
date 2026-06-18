@@ -5219,6 +5219,7 @@
 #define TARGET_MIN_BEMF_COUNTS   6
 #define USE_SERIAL_TELEMETRY
 #define USE_ADC
+//#define NEED_INPUT_READY
 #endif
 
 #ifndef LOOP_FREQUENCY_HZ

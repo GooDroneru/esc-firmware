@@ -14,7 +14,7 @@ extern uint32_t eeprom_address;
 extern uint16_t TIMER1_MAX_ARR;
 extern uint16_t dshot_frametime_high;
 extern uint16_t dshot_frametime_low;
-extern uint32_t gcr[37];
+extern uint32_t volatile gcr[37];
 extern uint8_t buffer_padding;
 extern uint16_t adjusted_input;
 extern uint32_t dma_buffer[64];

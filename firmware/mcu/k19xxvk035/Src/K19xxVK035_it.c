@@ -7,6 +7,7 @@
 #include "functions.h"
 #include "peripherals.h"
 #include "IO.h"
+#include "common.h"
 
 extern void transfercomplete();
 extern void PeriodElapsedCallback();
@@ -21,12 +22,9 @@ extern char telemetry_done;
 extern char servoPwm;
 extern char dshot;
 extern char inputSet;
-extern char running;
 extern uint16_t ADCDataDMA[3];
 extern uint32_t dma_buffer[64];
 extern uint8_t buffersize;
-char input_ready = 0;
-extern uint32_t gcr[37];
 extern uint8_t buffer_padding;
 
 
@@ -132,7 +130,7 @@ __RAMFUNC void DMA_CH8_IRQHandler()
     TMR3->VALUE = 0xFFFFFFFF;
     reverseBuffer();
     transfercomplete();
-    input_ready = 1;
+    //input_ready = 1;
     //processDshot();
     __NVIC_SetPendingIRQ(ADC_SEQ1_IRQn);
 }
@@ -141,6 +139,8 @@ __RAMFUNC void DMA_CH12_IRQHandler()
 {   
     IC_TIMER_REGISTER->CMPSHDW = 0;
     transfercomplete();
+    __NVIC_SetPendingIRQ(ADC_SEQ1_IRQn);
+    //input_ready = 1;
 }
 
 __RAMFUNC void ADC_SEQ1_IRQHandler() {
