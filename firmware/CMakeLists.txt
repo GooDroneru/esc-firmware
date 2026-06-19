@@ -6,11 +6,12 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_DIR}")
 # ---------------------------------------------------------------------------
 # Select target MCU platform (must be set before project())
 #   K1921VK035  — NIIET ARM Cortex-M4F
+#   K1921VG5T   — NIIET RISC-V
 #   CH32V203    — WCH RISC-V  (reserved, not yet implemented)
 
 # ---------------------------------------------------------------------------
-set(MCU_PLATFORM "K1921VK035" CACHE STRING "Target MCU platform: K1921VK035 or CH32V203")
-set_property(CACHE MCU_PLATFORM PROPERTY STRINGS "K1921VK035" "CH32V203")
+set(MCU_PLATFORM "K1921VK035" CACHE STRING "Target MCU platform: K1921VK035, K1921VG5T, or CH32V203")
+set_property(CACHE MCU_PLATFORM PROPERTY STRINGS "K1921VK035" "K1921VG5T" "CH32V203")
 
 if(MCU_PLATFORM STREQUAL "CH32V203")
     set(CH32_DEVICE "D6" CACHE STRING "CH32V20x device variant: D6, D8, D8W")
@@ -18,8 +19,10 @@ if(MCU_PLATFORM STREQUAL "CH32V203")
     include(${CMAKE_DIR}/ch32/CH32V2.cmake)
 elseif(MCU_PLATFORM STREQUAL "K1921VK035")
     include(${CMAKE_DIR}/arm/K1921VK035.cmake)
+elseif(MCU_PLATFORM STREQUAL "K1921VG5T")
+    include(${CMAKE_DIR}/riscv/K1921VG5T.cmake)
 else()
-    message(FATAL_ERROR "Unknown MCU_PLATFORM '${MCU_PLATFORM}'. Supported: K1921VK035, CH32V203")
+    message(FATAL_ERROR "Unknown MCU_PLATFORM '${MCU_PLATFORM}'. Supported: K1921VK035, K1921VG5T, CH32V203")
 endif()
 
 include(${CMAKE_DIR}/common.cmake)
@@ -33,7 +36,9 @@ if(MCU_PLATFORM STREQUAL "CH32V203")
     set(CH32_OVERRIDE_SYSTEM ON CACHE BOOL "Use project-local system_ch32v20x.c instead of SDK's" FORCE)
     add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/../../dependencies/ch32sdk ch32sdk)
 elseif(MCU_PLATFORM STREQUAL "K1921VK035")
-    add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/../../dependencies/niietsdk niietsdk)
+    add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/../../dependencies/niietsdk/vk035 niietsdk)
+elseif(MCU_PLATFORM STREQUAL "K1921VG5T")
+    add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/../../dependencies/niietsdk/vg5t niietsdk)
 endif()
 
 # ---------------------------------------------------------------------------
@@ -105,6 +110,68 @@ if(MCU_PLATFORM STREQUAL "K1921VK035")
 
     set(K1921VK035_ESC_APP_LD_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/mcu/k19xxvk035/esc_app.ld)
     gcc_add_linker_script(esc-firmware-niiet PRIVATE ${K1921VK035_ESC_APP_LD_SCRIPT})
+    gcc_generate_hex_file(esc-firmware-niiet)
+    gcc_generate_bin_file(esc-firmware-niiet)
+
+elseif(MCU_PLATFORM STREQUAL "K1921VG5T")
+
+    add_executable(esc-firmware-niiet)
+
+    target_sources(esc-firmware-niiet
+        PRIVATE
+            src/main.c
+            src/dshot.c
+            src/firmwareversion.c
+            src/functions.c
+            src/signal.c
+            src/sounds.c
+            src/kiss_telemetry.c
+            mcu/k19xxvg5t/Src/ADC.c
+            mcu/k19xxvg5t/Src/comparator.c
+            mcu/k19xxvg5t/Src/eeprom.c
+            mcu/k19xxvg5t/Src/IO.c
+            mcu/k19xxvg5t/Src/phaseouts.c
+            mcu/k19xxvg5t/Src/serial_telemetry.c
+            mcu/k19xxvg5t/Src/K19xxVK035_it.c
+            mcu/k19xxvg5t/Src/peripherals.c
+    )
+
+    target_include_directories(esc-firmware-niiet
+        PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}
+            ${ESC_COMMON_INCLUDE_DIRS}
+            ${CMAKE_CURRENT_SOURCE_DIR}/mcu/k19xxvg5t/Inc
+    )
+
+    target_link_libraries(esc-firmware-niiet
+        PRIVATE
+            niietsdk
+            K1921VG5T
+            NANO
+            NOSYS
+            m
+    )
+
+    target_compile_definitions(esc-firmware-niiet PRIVATE
+        MCU_K19XXVG5T
+        __NO_SYSTEM_INIT
+        SYSCLK_PLL
+        FIRMWARE_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
+        FIRMWARE_VERSION_MINOR=${PROJECT_VERSION_MINOR}
+    )
+
+    target_compile_options(esc-firmware-niiet PRIVATE
+        $<$<CONFIG:Release>:-Os>
+    )
+
+    target_link_options(esc-firmware-niiet PRIVATE
+        -Wl,-Map=${CMAKE_BINARY_DIR}/esc-firmware-niiet.map
+        -Wl,--print-memory-usage
+        -Wl,--no-warn-rwx-segments
+    )
+
+    set(K1921VG5T_ESC_APP_LD_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/mcu/k19xxvg5t/esc_app.ld)
+    gcc_add_linker_script(esc-firmware-niiet PRIVATE ${K1921VG5T_ESC_APP_LD_SCRIPT})
     gcc_generate_hex_file(esc-firmware-niiet)
     gcc_generate_bin_file(esc-firmware-niiet)
 

@@ -44,6 +44,14 @@
 #define USE_NTC
 #endif
 
+#ifdef K19XXVG5T
+#define FILE_NAME               "K19XXVG5T"
+#define FIRMWARE_NAME           "VG5T_AM32"
+#define DEAD_TIME               40
+#define TARGET_VOLTAGE_DIVIDER  159
+#define USE_NTC
+#endif
+
 // used to hold a port/pin in a single 16 bit integer
 #define GPIO_PORT_PIN(portnum, pinnum) ((portnum)<<8|(pinnum))
 
