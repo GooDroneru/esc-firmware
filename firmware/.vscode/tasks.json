@@ -4,7 +4,7 @@
       {
         "label": "Read CFGWORD via OpenOCD",
         "type": "shell",
-        "command": "openocd",
+        "command": "${workspaceFolder}/../../dependencies/tools/openocd/vk035/xpack-openocd-k1921vk-0.12.0-k1921vk/bin/openocd.exe",
         "args": [
           "-f", "${workspaceFolder}/../../dependencies/tools/openocd/vk035/scripts/connect_stlink.cfg",
           "-c", "k1921vk035 read nvr 0xC00",
@@ -20,7 +20,7 @@
       {
         "label": "Read SWD firmware chunk",
         "type": "shell",
-        "command": "openocd",
+        "command": "${workspaceFolder}/../../dependencies/tools/openocd/vk035/xpack-openocd-k1921vk-0.12.0-k1921vk/bin/openocd.exe",
         "args": [
           "-f", "${workspaceFolder}/../../dependencies/tools/openocd/vk035/scripts/connect_stlink.cfg",
           "-c", "init",
@@ -37,7 +37,7 @@
       {
         "label": "Write CFGWORD NvrLoad via OpenOCD",
         "type": "shell",
-        "command": "openocd",
+        "command": "${workspaceFolder}/../../dependencies/tools/openocd/vk035/xpack-openocd-k1921vk-0.12.0-k1921vk/bin/openocd.exe",
         "args": [
           "-f", "${workspaceFolder}/../../dependencies/tools/openocd/vk035/scripts/connect_stlink.cfg",
           "-c", "halt",
@@ -54,7 +54,7 @@
       {
         "label": "Reset",
         "type": "shell",
-        "command": "openocd",
+        "command": "${workspaceFolder}/../../dependencies/tools/openocd/vk035/xpack-openocd-k1921vk-0.12.0-k1921vk/bin/openocd.exe",
         "args": [
           "-f", "${workspaceFolder}/../../dependencies/tools/openocd/vk035/scripts/connect_stlink.cfg",
           "-c", "reset"
@@ -68,7 +68,7 @@
       {
         "label": "Disable SWD/JTAG",
         "type": "shell",
-        "command": "openocd",
+        "command": "${workspaceFolder}/../../dependencies/tools/openocd/vk035/xpack-openocd-k1921vk-0.12.0-k1921vk/bin/openocd.exe",
         "args": [
           "-f", "${workspaceFolder}/../../dependencies/tools/openocd/vk035/scripts/connect_stlink.cfg",
           "-c", "halt",
@@ -85,7 +85,7 @@
       {
         "label": "Enable SWD/JTAG",
         "type": "shell",
-        "command": "openocd",
+        "command": "${workspaceFolder}/../../dependencies/tools/openocd/vk035/xpack-openocd-k1921vk-0.12.0-k1921vk/bin/openocd.exe",
         "args": [
           "-f", "${workspaceFolder}/../../dependencies/tools/openocd/vk035/scripts/connect_stlink.cfg",
           "-c", "halt",
@@ -102,7 +102,7 @@
       {
         "label": "Full Flash Erase (SERVCTL)", //SERV PIN
         "type": "shell",
-        "command": "openocd",
+        "command": "${workspaceFolder}/../../dependencies/tools/openocd/vk035/xpack-openocd-k1921vk-0.12.0-k1921vk/bin/openocd.exe",
         "args": [
           "-f", "${workspaceFolder}/../../dependencies/tools/openocd/vk035/scripts/connect_stlink.cfg",
           "-c", "halt",                      
