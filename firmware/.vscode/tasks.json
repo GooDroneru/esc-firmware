@@ -6,9 +6,26 @@
         "type": "shell",
         "command": "openocd",
         "args": [
-          "-f", "scripts/connect_stlink.cfg",
+          "-f", "${workspaceFolder}/../../dependencies/tools/openocd/vk035/scripts/connect_stlink.cfg",
           "-c", "k1921vk035 read nvr 0xC00",
           "-c", "resume",
+          "-c", "exit"
+        ],
+        "group": {
+          "kind": "build",
+          "isDefault": true
+        },
+        "problemMatcher": []
+      },
+      {
+        "label": "Read SWD firmware chunk",
+        "type": "shell",
+        "command": "openocd",
+        "args": [
+          "-f", "${workspaceFolder}/../../dependencies/tools/openocd/vk035/scripts/connect_stlink.cfg",
+          "-c", "init",
+          "-c", "reset init",
+          "-c", "mdw 0x00000000 8",
           "-c", "exit"
         ],
         "group": {
@@ -22,7 +39,7 @@
         "type": "shell",
         "command": "openocd",
         "args": [
-          "-f", "scripts/connect_stlink.cfg",
+          "-f", "${workspaceFolder}/../../dependencies/tools/openocd/vk035/scripts/connect_stlink.cfg",
           "-c", "halt",
           "-c", "k1921vk035 write nvr erase 0xC00 0xFFFFFFEF 0xFFFFFFFF",
           "-c", "resume",
@@ -39,7 +56,7 @@
         "type": "shell",
         "command": "openocd",
         "args": [
-          "-f", "scripts/connect_stlink.cfg",
+          "-f", "${workspaceFolder}/../../dependencies/tools/openocd/vk035/scripts/connect_stlink.cfg",
           "-c", "reset"
         ],
         "group": {
@@ -53,7 +70,7 @@
         "type": "shell",
         "command": "openocd",
         "args": [
-          "-f", "scripts/connect_stlink.cfg",
+          "-f", "${workspaceFolder}/../../dependencies/tools/openocd/vk035/scripts/connect_stlink.cfg",
           "-c", "halt",
           "-c", "k1921vk035 write nvr erase 0xC00 0xFFFFFFFE 0xFFFFFFFF",
           "-c", "resume",
@@ -70,7 +87,7 @@
         "type": "shell",
         "command": "openocd",
         "args": [
-          "-f", "scripts/connect_stlink.cfg",
+          "-f", "${workspaceFolder}/../../dependencies/tools/openocd/vk035/scripts/connect_stlink.cfg",
           "-c", "halt",
           "-c", "k1921vk035 write nvr erase 0xC00 0xFFFFFFFF 0xFFFFFFFF",
           "-c", "resume",
@@ -87,7 +104,7 @@
         "type": "shell",
         "command": "openocd",
         "args": [
-          "-f", "scripts/connect_stlink.cfg",
+          "-f", "${workspaceFolder}/../../dependencies/tools/openocd/vk035/scripts/connect_stlink.cfg",
           "-c", "halt",                      
           "-c", "mmw 0x40040014 0x00000001 0xFFFFFFFF", 
           "-c", "resume",                   
