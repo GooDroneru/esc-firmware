@@ -33,7 +33,9 @@ if(MCU_PLATFORM STREQUAL "CH32V203")
     set(CH32_OVERRIDE_SYSTEM ON CACHE BOOL "Use project-local system_ch32v20x.c instead of SDK's" FORCE)
     add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/../../dependencies/ch32sdk ch32sdk)
 elseif(MCU_PLATFORM STREQUAL "K1921VK035")
-    add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/../../dependencies/niietsdk niietsdk)
+    add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/../../dependencies/niietsdk/vk035 vk035sdk)
+    elseif(MCU_PLATFORM STREQUAL "K1921VG5T")
+    add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/../../dependencies/niietsdk/vg5t vg5tsdk)
 endif()
 
 # ---------------------------------------------------------------------------
@@ -89,6 +91,78 @@ if(MCU_PLATFORM STREQUAL "K1921VK035")
         MCU_K19XXVK035
         __NO_SYSTEM_INIT
         SYSCLK_PLL
+        FIRMWARE_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
+        FIRMWARE_VERSION_MINOR=${PROJECT_VERSION_MINOR}
+    )
+
+    target_compile_options(esc-firmware-niiet PRIVATE
+        $<$<CONFIG:Release>:-Os>
+    )
+
+    target_link_options(esc-firmware-niiet PRIVATE
+        -Wl,-Map=${CMAKE_BINARY_DIR}/esc-firmware-niiet.map
+        -Wl,--print-memory-usage
+        -Wl,--no-warn-rwx-segments
+    )
+
+    set(K1921VK035_ESC_APP_LD_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/mcu/k19xxvk035/esc_app.ld)
+    gcc_add_linker_script(esc-firmware-niiet PRIVATE ${K1921VK035_ESC_APP_LD_SCRIPT})
+    gcc_generate_hex_file(esc-firmware-niiet)
+    gcc_generate_bin_file(esc-firmware-niiet)
+
+elseif(MCU_PLATFORM STREQUAL "K1921VG5T")
+
+    add_executable(esc-firmware-niiet)
+
+    target_sources(esc-firmware-niiet
+        PRIVATE
+            src/main.c
+            src/dshot.c
+            src/firmwareversion.c
+            src/functions.c
+            src/signal.c
+            src/sounds.c
+            src/kiss_telemetry.c
+            mcu/k19xxvk035/Src/ADC.c
+            mcu/k19xxvk035/Src/comparator.c
+            mcu/k19xxvk035/Src/eeprom.c
+            mcu/k19xxvk035/Src/IO.c
+            mcu/k19xxvk035/Src/phaseouts.c
+            mcu/k19xxvk035/Src/serial_telemetry.c
+            mcu/k19xxvk035/Src/K19xxVK035_it.c
+            mcu/k19xxvk035/Src/peripherals.c
+    )
+
+    target_include_directories(esc-firmware-niiet
+        PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}
+            ${ESC_COMMON_INCLUDE_DIRS}
+            ${CMAKE_CURRENT_SOURCE_DIR}/mcu/k19xxvk035/Inc
+    )
+
+    target_link_libraries(esc-firmware-niiet
+        PRIVATE
+            niietsdk
+            K1921VK035
+            NANO
+            NOSYS
+            m
+    )
+
+    target_compile_definitions(esc-firmware-niiet PRIVATE
+        MCU_K19XXVK035
+        __NO_SYSTEM_INIT
+        SYSCLK_PLL
+
+    # Required by system_k1921vg5t.c for clock initialization
+    HSECLK_VAL=16000000
+    SYSCLK_PLL
+    CKO_HSE
+    # startup_k1921vg5t.S calls `bl __START` which defaults to `_start` (newlib
+    # C-runtime entry). Without newlib's crt0, `_start` is missing. Override it
+    # to jump straight to main() for bare-metal builds.
+
+
         FIRMWARE_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
         FIRMWARE_VERSION_MINOR=${PROJECT_VERSION_MINOR}
     )
@@ -170,3 +244,5 @@ elseif(MCU_PLATFORM STREQUAL "CH32V203")
     gcc_generate_bin_file(esc-firmware-wch)
 
 endif()
+
+
