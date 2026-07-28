@@ -10,7 +10,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_DIR}")
 #   CH32V203    — WCH RISC-V  (reserved, not yet implemented)
 
 # ---------------------------------------------------------------------------
-set(MCU_PLATFORM "K1921VK035" CACHE STRING "Target MCU platform: K1921VK035, K1921VG5T, or CH32V203")
+set(MCU_PLATFORM "K1921VG5T" CACHE STRING "Target MCU platform: K1921VK035, K1921VG5T, or CH32V203")
 set_property(CACHE MCU_PLATFORM PROPERTY STRINGS "K1921VK035" "K1921VG5T" "CH32V203")
 
 if(MCU_PLATFORM STREQUAL "CH32V203")
@@ -53,9 +53,9 @@ set(ESC_COMMON_INCLUDE_DIRS
 
 if(MCU_PLATFORM STREQUAL "K1921VK035")
 
-    add_executable(esc-firmware-niiet)
+    add_executable(esc-firmware-vk035)
 
-    target_sources(esc-firmware-niiet
+    target_sources(esc-firmware-vk035
         PRIVATE
             src/main.c
             src/dshot.c
@@ -74,23 +74,23 @@ if(MCU_PLATFORM STREQUAL "K1921VK035")
             mcu/k19xxvk035/Src/peripherals.c
     )
 
-    target_include_directories(esc-firmware-niiet
+    target_include_directories(esc-firmware-vk035
         PRIVATE
             ${CMAKE_CURRENT_SOURCE_DIR}
             ${ESC_COMMON_INCLUDE_DIRS}
             ${CMAKE_CURRENT_SOURCE_DIR}/mcu/k19xxvk035/Inc
     )
 
-    target_link_libraries(esc-firmware-niiet
+    target_link_libraries(esc-firmware-vk035
         PRIVATE
-            niietsdk
+            vk035sdk
             K1921VK035
             NANO
             NOSYS
             m
     )
 
-    target_compile_definitions(esc-firmware-niiet PRIVATE
+    target_compile_definitions(esc-firmware-vk035 PRIVATE
         MCU_K19XXVK035
         __NO_SYSTEM_INIT
         SYSCLK_PLL
@@ -98,26 +98,26 @@ if(MCU_PLATFORM STREQUAL "K1921VK035")
         FIRMWARE_VERSION_MINOR=${PROJECT_VERSION_MINOR}
     )
 
-    target_compile_options(esc-firmware-niiet PRIVATE
+    target_compile_options(esc-firmware-vk035 PRIVATE
         $<$<CONFIG:Release>:-Os>
     )
 
-    target_link_options(esc-firmware-niiet PRIVATE
-        -Wl,-Map=${CMAKE_BINARY_DIR}/esc-firmware-niiet.map
+    target_link_options(esc-firmware-vk035 PRIVATE
+        -Wl,-Map=${CMAKE_BINARY_DIR}/esc-firmware-vk035.map
         -Wl,--print-memory-usage
         -Wl,--no-warn-rwx-segments
     )
 
     set(K1921VK035_ESC_APP_LD_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/mcu/k19xxvk035/esc_app.ld)
-    gcc_add_linker_script(esc-firmware-niiet PRIVATE ${K1921VK035_ESC_APP_LD_SCRIPT})
-    gcc_generate_hex_file(esc-firmware-niiet)
-    gcc_generate_bin_file(esc-firmware-niiet)
+    gcc_add_linker_script(esc-firmware-vk035 PRIVATE ${K1921VK035_ESC_APP_LD_SCRIPT})
+    gcc_generate_hex_file(esc-firmware-vk035)
+    gcc_generate_bin_file(esc-firmware-vk035)
 
 elseif(MCU_PLATFORM STREQUAL "K1921VG5T")
 
-    add_executable(esc-firmware-niiet)
+    add_executable(esc-firmware-vg5t)
 
-    target_sources(esc-firmware-niiet
+    target_sources(esc-firmware-vg5t
         PRIVATE
             src/main.c
             src/dshot.c
@@ -132,48 +132,51 @@ elseif(MCU_PLATFORM STREQUAL "K1921VG5T")
             mcu/k19xxvg5t/Src/IO.c
             mcu/k19xxvg5t/Src/phaseouts.c
             mcu/k19xxvg5t/Src/serial_telemetry.c
-            mcu/k19xxvg5t/Src/K19xxVK035_it.c
+            mcu/k19xxvg5t/Src/K19xxVG5T_it.c
             mcu/k19xxvg5t/Src/peripherals.c
     )
 
-    target_include_directories(esc-firmware-niiet
+    target_include_directories(esc-firmware-vg5t
         PRIVATE
             ${CMAKE_CURRENT_SOURCE_DIR}
             ${ESC_COMMON_INCLUDE_DIRS}
             ${CMAKE_CURRENT_SOURCE_DIR}/mcu/k19xxvg5t/Inc
     )
 
-    target_link_libraries(esc-firmware-niiet
+    target_link_libraries(esc-firmware-vg5t
         PRIVATE
-            niietsdk
+            vg5tsdk
             K1921VG5T
             NANO
             NOSYS
             m
     )
 
-    target_compile_definitions(esc-firmware-niiet PRIVATE
+    target_compile_definitions(esc-firmware-vg5t PRIVATE
         MCU_K19XXVG5T
         __NO_SYSTEM_INIT
-        SYSCLK_PLL
+        # Required by system_k1921vg5t.c for clock initialization
+        #HSECLK_VAL=16000000
+        #SYSCLK_PLL
+        #CKO_HSE
         FIRMWARE_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
         FIRMWARE_VERSION_MINOR=${PROJECT_VERSION_MINOR}
     )
 
-    target_compile_options(esc-firmware-niiet PRIVATE
+    target_compile_options(esc-firmware-vg5t PRIVATE
         $<$<CONFIG:Release>:-Os>
     )
 
-    target_link_options(esc-firmware-niiet PRIVATE
-        -Wl,-Map=${CMAKE_BINARY_DIR}/esc-firmware-niiet.map
+    target_link_options(esc-firmware-vg5t PRIVATE
+        -Wl,-Map=${CMAKE_BINARY_DIR}/esc-firmware-vg5t.map
         -Wl,--print-memory-usage
         -Wl,--no-warn-rwx-segments
     )
 
     set(K1921VG5T_ESC_APP_LD_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/mcu/k19xxvg5t/esc_app.ld)
-    gcc_add_linker_script(esc-firmware-niiet PRIVATE ${K1921VG5T_ESC_APP_LD_SCRIPT})
-    gcc_generate_hex_file(esc-firmware-niiet)
-    gcc_generate_bin_file(esc-firmware-niiet)
+    gcc_add_linker_script(esc-firmware-vg5t PRIVATE ${K1921VG5T_ESC_APP_LD_SCRIPT})
+    gcc_generate_hex_file(esc-firmware-vg5t)
+    gcc_generate_bin_file(esc-firmware-vg5t)
 
 elseif(MCU_PLATFORM STREQUAL "CH32V203")
 
