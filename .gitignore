@@ -67,3 +67,6 @@ dkms.conf
 
 # debug information files
 *.dwo
+
+# Cache directories
+.cache
