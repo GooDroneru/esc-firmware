@@ -349,7 +349,7 @@ char return_to_center = 0;
 uint16_t target_e_com_time = 0;
 int16_t Speed_pid_output;
 char use_speed_control_loop = 0;
-float input_override = 0;
+int32_t input_override = 0;
 int16_t use_current_limit_adjust = 2000;
 char use_current_limit = 0;
 int32_t stall_protection_adjust = 0;
@@ -1136,9 +1136,9 @@ void setInput()
                         speedPid.error = 0;
                         input_override = 0;
                     } else {
-                        input = (uint16_t)input_override;
-                        if (input > 1999) {
-                            input = 1999;
+                        input = (uint16_t)(input_override / 10000); // speed control pid override
+                        if (input > 2047) {
+                            input = 2047;
                         }
                         if (input < 48) {
                             input = 48;
@@ -1423,19 +1423,20 @@ __RAMFUNC void tenKhzRoutine()
 		                    stall_protection_adjust = 0;
 		                }
 		            }
-		            if (use_speed_control_loop && running) {
-                input_override += (float)doPidCalculations(&speedPid, e_com_time, target_e_com_time) / 100.0f;
-                if (input_override > 2000.0f) {
-                    input_override = 2000.0f;
+		        }
+		        // Speed PID runs at 20kHz for faster compensation
+		        if (use_speed_control_loop && running) {
+                input_override += doPidCalculations(&speedPid, e_com_time, target_e_com_time);
+                if (input_override > 2047 * 10000) {
+                    input_override = 2047 * 10000;
 		                }
-		                if (input_override < 0.0f) {
-		                    input_override = 0.0f;
+		                if (input_override < 0) {
+		                    input_override = 0;
 		                }
 		                if (zero_crosses < 100) {
 		                    speedPid.integral = 0;
 		                }
 		            }
-		        }
         if (ramp_count > ramp_divider) {
           ramp_count = 0;
 #ifdef VOLTAGE_BASED_RAMP
