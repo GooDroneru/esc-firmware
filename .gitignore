@@ -1,3 +1,9 @@
+# macOS
+.DS_Store
+
+# Cache
+.cache
+
 # Prerequisites
 *.d
 
