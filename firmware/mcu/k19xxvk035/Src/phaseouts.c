@@ -35,7 +35,7 @@ void proportionalBrake()
  
 void phaseBPWM() 
 {
-	if(!eepromBuffer.comp_pwm){  // for future
+	if(!temp_comp_pwm){  // for future
 		GPIOA->ALTFUNCCLR_bit.PHASE_B_LOW = 1;
 		GPIOA->DATAOUTCLR_bit.PHASE_B_LOW = 1;
 		GPIOA->OUTENSET_bit.PHASE_B_LOW = 1;
@@ -70,7 +70,7 @@ void phaseBLOW()
 //////////////////////////////PHASE 2//////////////////////////////////////////////////
 void phaseAPWM()
 {
-	if (!eepromBuffer.comp_pwm)
+	if (!temp_comp_pwm)
 	{
 		GPIOA->ALTFUNCCLR_bit.PHASE_A_LOW = 1;
 		GPIOA->DATAOUTCLR_bit.PHASE_A_LOW = 1;
@@ -109,7 +109,7 @@ void phaseALOW()
 
 void phaseCPWM()
 {
-	if (!eepromBuffer.comp_pwm){
+	if (!temp_comp_pwm){
 		GPIOA->ALTFUNCCLR_bit.PHASE_C_LOW = 1;
 		GPIOA->DATAOUTCLR_bit.PHASE_C_LOW = 1;
 		GPIOA->OUTENSET_bit.PHASE_C_LOW = 1;
