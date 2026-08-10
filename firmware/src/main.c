@@ -326,6 +326,8 @@ uint16_t stall_protect_target_interval = TARGET_STALL_PROTECTION_INTERVAL;
 uint16_t enter_sine_angle = 180;
 char do_once_sinemode = 0;
 uint8_t auto_advance_level;
+volatile uint8_t zero_throttle_brake_active;
+uint8_t brake_countdown;
 
 //============================= Servo Settings ==============================
 uint16_t servo_low_threshold = 1100; // anything below this point considered 0
@@ -604,9 +606,10 @@ void loadEEpromSettings() {
     eepromBuffer.current_I = 0;   // 0-255
     eepromBuffer.current_D = 100; // 0-255
     eepromBuffer.active_brake_power = 0; // 1-5 percent duty cycle
-    eepromBuffer.drive_by_rpm = 0;       // 14
-    eepromBuffer.maximum_rpm = 50;       // 15  10000 rpm
-    eepromBuffer.minimum_rpm = 5;        // 16  1000 rpm
+    eepromBuffer.brake_on_zero_throttle = 0;
+    eepromBuffer.drive_by_rpm = 0; // 14
+    eepromBuffer.maximum_rpm = 50; // 15  10000 rpm
+    eepromBuffer.minimum_rpm = 5;  // 16  1000 rpm
   }
   if (eepromBuffer.drive_by_rpm >
       1) { // drive_by_rpm is a single 0/1 byte, anything else is invalid
@@ -617,6 +620,10 @@ void loadEEpromSettings() {
   }
   if (eepromBuffer.minimum_rpm == 0 || eepromBuffer.minimum_rpm > 250) {
     eepromBuffer.minimum_rpm = 5; // 1000 rpm default
+  }
+  if (eepromBuffer.brake_on_zero_throttle >
+      9) { // byte 13 held a firmware name character before eeprom version 4
+    eepromBuffer.brake_on_zero_throttle = 0;
   }
   drive_by_rpm = eepromBuffer.drive_by_rpm;
   MAXIMUM_RPM_SPEED_CONTROL = eepromBuffer.maximum_rpm * 200;
@@ -1549,23 +1556,58 @@ __RAMFUNC void tenKhzRoutine() { // 20khz as of 2.00 to be renamed
       duty_to_set = DUTY_LIMIT_99;
     }
     if ((armed && running) && input > 47) {
-      if (eepromBuffer.variable_pwm) {
-        // ...existing code...
-      }
-      adjusted_duty_cycle = ((duty_to_set * tim1_arr) / 2000) + 1;
-    } else {
-      if (prop_brake_active) {
-        adjusted_duty_cycle =
-            tim1_arr - ((prop_brake_duty_cycle * tim1_arr) / 2000);
+      if (zero_throttle_brake_active) {
+        zero_throttle_brake_active = 0;
+        temp_comp_pwm = eepromBuffer.comp_pwm;
       } else {
-        if ((eepromBuffer.brake_on_stop == 2) &&
-            armed) { // require arming for active brake
-          comStep(2);
+        if (eepromBuffer.variable_pwm) {
+          // ...existing code...
+        }
+        adjusted_duty_cycle = ((duty_to_set * tim1_arr) / 2000) + 1;
+      }
+    } else {
+      if (running && input < 47) { // brake on zero throttle behavior while
+                                   // motor is still rotating
+        if (eepromBuffer.brake_on_zero_throttle == 1) { // coast on 0 throttle
+          temp_comp_pwm = 0; // tracks rpm until stopped
+          zero_throttle_brake_active = 1;
+        }
+        if (eepromBuffer.brake_on_zero_throttle ==
+            2) {             // motor brake on 0 throttle
+          temp_comp_pwm = 1; // tracks rpm until stopped
+          zero_throttle_brake_active = 1;
+        }
+        if ((eepromBuffer.brake_on_zero_throttle > 2) &&
+            (eepromBuffer.brake_on_zero_throttle <
+             10)) { // brake on 0 throttle after 2 + x seconds
+          if (zero_throttle_brake_active == 0) {
+            brake_countdown = eepromBuffer.brake_on_zero_throttle -
+                              2; // brake countdown decremented in 20khz routine
+            tenkhzcounter = LOOP_FREQUENCY_HZ;
+          }
+          if ((brake_countdown == 0) && (zero_throttle_brake_active == 1)) {
+            zero_crosses =
+                0;       // after countdown forces the brake on stop behavior
+            running = 0; // stops tracking rpm
+          }
+          zero_throttle_brake_active = 1;
+        }
+        adjusted_duty_cycle = ((duty_cycle * tim1_arr) / 2000);
+      } else { // input less than 47 and not running, normal brake on stop
+               // behavior
+        if (prop_brake_active) {
           adjusted_duty_cycle =
-              DEAD_TIME +
-              ((eepromBuffer.active_brake_power * tim1_arr) / 2000) * 10;
+              tim1_arr - ((prop_brake_duty_cycle * tim1_arr) / 2000);
         } else {
-          adjusted_duty_cycle = ((duty_cycle * tim1_arr) / 2000);
+          if ((eepromBuffer.brake_on_stop == 2) &&
+              armed) { // require arming for active brake
+            comStep(2);
+            adjusted_duty_cycle =
+                DEAD_TIME +
+                ((eepromBuffer.active_brake_power * tim1_arr) / 2000) * 10;
+          } else {
+            adjusted_duty_cycle = ((duty_cycle * tim1_arr) / 2000);
+          }
         }
       }
     }
@@ -1839,6 +1881,7 @@ int main(void) {
     eepromBuffer.use_sine_start = 0;
     low_rpm_throttle_limit = 1;
     eepromBuffer.variable_pwm = 0;
+    eepromBuffer.brake_on_zero_throttle = 0;
     // eepromBuffer.stall_protection = 1;
     eepromBuffer.comp_pwm = 0;
     eepromBuffer.stuck_rotor_protection = 0;
@@ -2066,9 +2109,12 @@ int main(void) {
     }
 #endif
 
-    if (tenkhzcounter > LOOP_FREQUENCY_HZ) { // 1s sample interval 10000
+    if (tenkhzcounter > LOOP_FREQUENCY_HZ) { // 1s sample interval
       consumed_current += (actual_current << 16) / 360;
       tenkhzcounter = 0;
+      if (brake_countdown > 0) {
+        brake_countdown--;
+      }
     }
 
 #ifndef BRUSHED_MODE
@@ -2282,18 +2328,22 @@ int main(void) {
         }
       }
 #endif
-      if (INTERVAL_TIMER_COUNT > 45000 && running == 1) {
-        temp_comp_pwm = eepromBuffer.comp_pwm;
-        bemf_timeout_happened++;
+      if (INTERVAL_TIMER_COUNT > 45000) {
+        zero_throttle_brake_active =
+            0; // reset zero throttle brake on back emf timeout (rotation stop)
+        if (running == 1) {
+          temp_comp_pwm = eepromBuffer.comp_pwm;
+          bemf_timeout_happened++;
 
-        maskPhaseInterrupts();
-        old_routine = 1;
-        if (input < 48) {
-          running = 0;
-          commutation_interval = 5000;
+          maskPhaseInterrupts();
+          old_routine = 1;
+          if (input < 48) {
+            running = 0;
+            commutation_interval = 5000;
+          }
+          zero_crosses = 0;
+          zcfoundroutine();
         }
-        zero_crosses = 0;
-        zcfoundroutine();
       }
     } else { // stepper sine
 

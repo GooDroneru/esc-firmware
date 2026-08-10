@@ -25,15 +25,16 @@ typedef union EEprom_u {
     uint8_t current_I;           // 10 0-255
     uint8_t current_D;           // 11 0-255
     uint8_t active_brake_power;  // 12  1-5 percent duty cycle
-    uint8_t reserved_eeprom_13;  // 13 (was brake_on_zero_throttle)
-    uint8_t drive_by_rpm;        // 14 0=off 1=on rpm speed control
-    uint8_t maximum_rpm;         // 15 max rpm speed control / 200
-    uint8_t minimum_rpm;         // 16 min rpm speed control / 200
-    uint8_t dir_reversed;        // 17
-    uint8_t bi_direction;        // 18
-    uint8_t use_sine_start;      // 19
-    uint8_t comp_pwm;            // 20
-    uint8_t variable_pwm;        // 21
+    uint8_t brake_on_zero_throttle; // 13  0=off 1=coast 2=motor brake
+                                    // 3-9=delayed brake (2+x seconds)
+    uint8_t drive_by_rpm;           // 14 0=off 1=on rpm speed control
+    uint8_t maximum_rpm;            // 15 max rpm speed control / 200
+    uint8_t minimum_rpm;            // 16 min rpm speed control / 200
+    uint8_t dir_reversed;           // 17
+    uint8_t bi_direction;           // 18
+    uint8_t use_sine_start;         // 19
+    uint8_t comp_pwm;               // 20
+    uint8_t variable_pwm;           // 21
     uint8_t stuck_rotor_protection; // 22
     uint8_t advance_level;          // 23
     uint8_t pwm_frequency;          // 24
