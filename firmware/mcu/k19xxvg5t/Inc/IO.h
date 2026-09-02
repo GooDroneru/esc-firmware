@@ -9,6 +9,7 @@
 #define IO_H_
 
 #include "main.h"
+#include "targets.h"
 
 void changeToOutput();
 void changeToInput();
@@ -21,6 +22,12 @@ void setInputPullDown();
 void setInputPullUp();
 void enableHalfTransferInt();
 void setInputPullNone();
+
+/* IC timer period access differs between NIIET MCUs (ECAP PRD vs TMR PERIOD) */
+static inline void ic_timer_set_period(uint16_t period)
+{
+    IC_TIMER_REGISTER->PERIOD = period;
+}
 
 extern char inputSet;
 extern char dshot;

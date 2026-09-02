@@ -155,10 +155,13 @@ elseif(MCU_PLATFORM STREQUAL "K1921VG5T")
     target_compile_definitions(esc-firmware-vg5t PRIVATE
         MCU_K19XXVG5T
         __NO_SYSTEM_INIT
-        # Required by system_k1921vg5t.c for clock initialization
-        #HSECLK_VAL=16000000
-        #SYSCLK_PLL
-        #CKO_HSE
+        # Clocks are set up by the bootloader: 16 MHz HSE -> PLL 96 MHz.
+        # HSECLK_VAL is needed by SystemCoreClockUpdate() to compute the clock.
+        HSECLK_VAL=16000000
+        SYSCLK_PLL
+        CKO_NONE
+        # machine timer runs from the core clock after reset (UM 10.1)
+        MTIME_FREQ_HZ=96000000ULL
         FIRMWARE_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
         FIRMWARE_VERSION_MINOR=${PROJECT_VERSION_MINOR}
     )

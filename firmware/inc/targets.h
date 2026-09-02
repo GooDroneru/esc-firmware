@@ -35,6 +35,58 @@
 // #define K19XXVK035`
 #endif
 
+/***********************      K19XXVG5T MCU Defines  ********************************/
+/* NIIET RISC-V (Syntacore SCR4). HSE 16 MHz -> PLL 96 MHz (set up by the
+ * bootloader; the app only calls SystemCoreClockUpdate()).
+ * Timers: TMR0 = DShot IC/TX on PA14 (TMR0_IO), TMR1 = commutation timer,
+ * TMR2 = zero-cross interval timer, TMR3 = blocking us-delay timer.
+ * The 20 kHz control loop tick comes from the RISC-V machine timer (mtimer).
+ * NOTE: this section lives at the top of the file so that the
+ * HARDWARE_GROUP_K19XXVG5T block below is active on the first expansion
+ * (targets.h has no include guard and relies on ordered macro definitions). */
+#ifdef MCU_K19XXVG5T
+#define HARDWARE_GROUP_K19XXVG5T
+#define K19XXVG5T
+#define CPU_FREQUENCY_MHZ        96
+#define INTERVAL_TIMER           TMR2
+#define INTERVAL_TIMER_EN        TMR2EN
+#define TEN_KHZ_TIMER            mtimer
+#define DELAY_TIMER              TMR3
+#define DELAY_TIMER_EN           TMR3EN
+#define UTILITY_TIMER            NULL
+#define COM_TIMER                TMR1
+#define COM_TIMER_EN             TMR1EN
+#define COM_TIMER_IRQ            IsrVect_IRQ_TMR1
+#define WDG_TRIGGER_TICKS        9600000
+#define TIM1_AUTORELOAD          1999
+#define APPLICATION_ADDRESS      0x00001000
+#define TARGET_MIN_BEMF_COUNTS   6
+#define USE_SERIAL_TELEMETRY
+#define USE_ADC
+#endif
+#ifdef MCU_K19XXVK035
+#define HARDWARE_GROUP_K19XXVK035
+#define K19XXVK035
+#define CPU_FREQUENCY_MHZ        100
+//#define EEPROM_START_ADD        (uint32_t)0x0000F000
+#define INTERVAL_TIMER           TMR1
+#define INTERVAL_TIMER_EN        TMR1EN
+#define TEN_KHZ_TIMER            SysTick
+#define DELAY_TIMER              TMR2
+#define DELAY_TIMER_EN           TMR2EN
+#define UTILITY_TIMER            NULL
+#define COM_TIMER                TMR0
+#define COM_TIMER_EN             TMR0EN
+#define COM_TIMER_IRQ            TMR0_IRQn
+#define WDG_TRIGGER_TICKS        10000000
+#define TIM1_AUTORELOAD          1999
+#define APPLICATION_ADDRESS      0x00002000
+#define TARGET_MIN_BEMF_COUNTS   6
+#define USE_SERIAL_TELEMETRY
+#define USE_ADC
+#endif
+
+
 /*****************************      NIIET Targets *************************************/
 #ifdef K19XXVK035
 #define FILE_NAME               "K19XXVK035"
@@ -4908,6 +4960,37 @@
 #define DSHOT_PRIORITY_THRESHOLD 60
 #endif
 
+/************************************ K19XXVG5T Hardware Group ***********************/
+/* Board pin map (LQFP48):
+ *  PA8/PA9   PWM0_A/B  (TIM1_CH1/CH1N, phase A)
+ *  PA10/PA11 PWM1_A/B  (TIM1_CH2/CH2N, phase B)
+ *  PA12/PA13 PWM2_A/B  (TIM1_CH3/CH3N, phase C)
+ *  PA14      TMR0_IO   (DShot/servo input, AF1)
+ *  PB0/PB1/PB2  ADC_CH0/CH1/CH2 (voltage/current/temperature)
+ *  PB4/PB5/PB6  BEMF comparators A/B/C (GPIO edge interrupts)
+ *  PB9       UART0_TX (telemetry, AF1) */
+#ifdef HARDWARE_GROUP_K19XXVG5T
+#define INPUT_PIN_PORT          GPIOA
+#define INPUT_PIN               GPIO_Pin_14
+#define IC_TIMER_REGISTER       TMR0
+#define IC_TIMER_INT_VECTOR     IsrVect_IRQ_TMR0
+#define INPUT_DMA_CHANNEL       DMA_Channel_0
+#define IC_DMA_IRQ_NAME         IsrVect_IRQ_DMA_CH0
+#define PHASE_A_GPIO_LOW        GPIO_Pin_9
+#define PHASE_A_GPIO_PORT_LOW   GPIOA
+#define PHASE_A_GPIO_HIGH       GPIO_Pin_8
+#define PHASE_A_GPIO_PORT_HIGH  GPIOA
+#define PHASE_B_GPIO_LOW        GPIO_Pin_11
+#define PHASE_B_GPIO_PORT_LOW   GPIOA
+#define PHASE_B_GPIO_HIGH       GPIO_Pin_10
+#define PHASE_B_GPIO_PORT_HIGH  GPIOA
+#define PHASE_C_GPIO_LOW        GPIO_Pin_13
+#define PHASE_C_GPIO_PORT_LOW   GPIOA
+#define PHASE_C_GPIO_HIGH       GPIO_Pin_12
+#define PHASE_C_GPIO_PORT_HIGH  GPIOA
+#define DSHOT_PRIORITY_THRESHOLD 60
+#endif
+
 /************************************ MCU COMMON PERIPHERALS
  * **********************************************/
 
@@ -5177,7 +5260,6 @@
 #define USE_ADC
 #endif
 
-
 #ifdef MCU_CH32V203
 #define CH32V203
 #define NEED_INPUT_READY
@@ -5207,27 +5289,12 @@
 #endif
 
 /***********************      K19XXVK035 MCU Defines  ********************************/
-#ifdef MCU_K19XXVK035
-#define HARDWARE_GROUP_K19XXVK035
-#define K19XXVK035
-#define CPU_FREQUENCY_MHZ        100
-//#define EEPROM_START_ADD        (uint32_t)0x0000F000
-#define INTERVAL_TIMER           TMR1
-#define INTERVAL_TIMER_EN        TMR1EN
-#define TEN_KHZ_TIMER            SysTick
-#define DELAY_TIMER              TMR2
-#define DELAY_TIMER_EN           TMR2EN
-#define UTILITY_TIMER            NULL
-#define COM_TIMER                TMR0
-#define COM_TIMER_EN             TMR0EN
-#define COM_TIMER_IRQ            TMR0_IRQn
-#define WDG_TRIGGER_TICKS        10000000
-#define TIM1_AUTORELOAD          1999
-#define APPLICATION_ADDRESS      0x00002000
-#define TARGET_MIN_BEMF_COUNTS   6
-#define USE_SERIAL_TELEMETRY
-#define USE_ADC
-#endif
+/***********************      K19XXVG5T MCU Defines  ********************************/
+/* NIIET RISC-V (Syntacore SCR4). HSE 16 MHz -> PLL 96 MHz (set up by the
+ * bootloader; the app only calls SystemCoreClockUpdate()).
+ * Timers: TMR0 = DShot IC/TX on PA14 (TMR0_IO), TMR1 = commutation timer,
+ * TMR2 = zero-cross interval timer, TMR3 = blocking us-delay timer.
+ * The 20 kHz control loop tick comes from the RISC-V machine timer (mtimer). */
 
 #ifndef LOOP_FREQUENCY_HZ
 #define LOOP_FREQUENCY_HZ 20000

@@ -706,7 +706,7 @@ void loadEEpromSettings()
 #ifdef CH32V203
     TIM1->BDTR |= dead_time_override;
 #endif
-#ifdef K19XXVK035
+#if defined(K19XXVK035) || defined(K19XXVG5T)
     PWM0->DBRED = dead_time_override;
     PWM0->DBFED = dead_time_override;
     PWM1->DBRED = dead_time_override;
@@ -1724,7 +1724,7 @@ int main(void)
     }
 
    //delayMillis(500);
-#ifdef K19XXVK035
+#if defined(K19XXVK035) || defined(K19XXVG5T)
     PWM0->DBRED = dead_time_override;
     PWM0->DBFED = dead_time_override;
     PWM1->DBRED = dead_time_override;
@@ -2052,7 +2052,7 @@ if(zero_crosses < 5){
             startADCConversion();
             degrees_celsius = getConvertedDegrees(ADC_raw_temp);
 #endif
-#ifdef K19XXVK035
+#if defined(K19XXVK035) || defined(K19XXVG5T)
             ADC_DMA_Callback();
             ADC_SEQ_SwStartCmd();
             degrees_celsius = getConvertedDegrees(0);

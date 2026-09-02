@@ -1,10 +1,16 @@
 /*
- * peripherals.c
+ * peripherals.c — K1921VG5T (NIIET RISC-V, SCR4), 96 MHz PLL from 16 MHz HSE
+ *
+ * Timer allocation:
+ *   TMR0 — DShot input capture / GCR telemetry output on PA14 (TMR0_IO)
+ *   TMR1 — commutation timer (COM_TIMER)
+ *   TMR2 — zero-cross interval timer (INTERVAL_TIMER, free running)
+ *   TMR3 — blocking us-delay timer (DELAY_TIMER)
+ *   mtimer (RISC-V machine timer) — 20 kHz control loop tick
  *
  *  Created on: Sep. 26, 2020
  *      Author: Alka
- *
- *      Modified By TempersLee June 21, 2024
+ *      Ported to K1921VG5T, 2026
  */
 
 // PERIPHERAL SETUP
@@ -13,18 +19,28 @@
 #include "ADC.h"
 #include "common.h"
 #include "functions.h"
+#include "plib5t_dma.h"
 #include "serial_telemetry.h"
 #include "targets.h"
 
+#ifndef MTIME_FREQ_HZ
+#define MTIME_FREQ_HZ ((uint64_t)CPU_FREQUENCY_MHZ * 1000000ULL)
+#endif
+
+/* TMR is clocked by SYSCLK; interval/com time is kept in 0.5 us units
+ * like on K19XXVK035 (there /50 @ 100 MHz, here /(CPU_FREQUENCY_MHZ/2)). */
+#define TIMER_TICKS_PER_HALFUS (CPU_FREQUENCY_MHZ / 2)
+
 void initCorePeripherals(void)
 {
-  UN_TIM2_Init( );
+  PlicIrqSetup();
+  UN_TIM0_Init( );    // dshot input capture timer + DMA
   ALL_GPIO_Init( );   //gpio clock
-  ALL_DMA_Init( );    //IC DMA and ADC DMA
+  ALL_DMA_Init( );    //IC DMA
   PWM_TIM1_Init( );   //6 channels PWM
-  ZC_TIM4_Init( );    //zero cross timer
+  ZC_TIM2_Init( );    //zero cross timer
   ALL_COMP_Init( );   //ALL comparer
-  COM_TIM3_Init( );   //
+  COM_TIM1_Init( );   //
   TENKHz_SysTick_Init( );
   MX_TIM16_Init( );
 
@@ -35,7 +51,7 @@ void initCorePeripherals(void)
 
 void initAfterJump(void)
 {
-    //don't need
+    // clocks are configured by the bootloader, nothing to do
 }
 
 void SystemClock_Config(void)
@@ -51,7 +67,7 @@ void setAutoReloadPWM(uint16_t relval)
 }
 
 void setPrescalerPWM(uint16_t presc){
-  if(presc == 0) {  
+  if(presc == 0) {
     PWM0->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div2;        //12 KHz
     PWM1->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div2;        //12 KHz
     PWM2->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div2;        //12 KHz
@@ -59,96 +75,88 @@ void setPrescalerPWM(uint16_t presc){
     PWM1->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div1; //48 KHz
     PWM2->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div1; //48 KHz
   }
-  if(presc == 10) {  
-    PWM0->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div10; 
+  if(presc == 10) {
+    PWM0->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div10;
     PWM1->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div10;
     PWM2->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div10;
   }
   else if(presc == 20) {
-    PWM0->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div2;    
-    PWM1->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div2;   
-    PWM2->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div2;   
-    PWM0->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div10; 
+    PWM0->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div2;
+    PWM1->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div2;
+    PWM2->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div2;
+    PWM0->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div10;
     PWM1->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div10;
     PWM2->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div10;
   }
   else if(presc == 25) {
-    PWM0->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div2;    
-    PWM1->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div2;   
-    PWM2->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div2;   
-    PWM0->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div12; 
+    PWM0->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div2;
+    PWM1->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div2;
+    PWM2->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div2;
+    PWM0->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div12;
     PWM1->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div12;
     PWM2->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div12;
   }
   else if(presc == 30) {
-    PWM0->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div2;    
-    PWM1->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div2;   
-    PWM2->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div2;   
-    PWM0->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div14; 
+    PWM0->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div2;
+    PWM1->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div2;
+    PWM2->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div2;
+    PWM0->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div14;
     PWM1->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div14;
     PWM2->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div14;
   }
   else if(presc == 40) {
-    PWM0->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div4;    
-    PWM1->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div4;   
-    PWM2->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div4;   
-    PWM0->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div10; 
+    PWM0->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div4;
+    PWM1->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div4;
+    PWM2->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div4;
+    PWM0->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div10;
     PWM1->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div10;
     PWM2->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div10;
   }
   else if(presc == 50) {
-    PWM0->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div4;    
-    PWM1->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div4;   
-    PWM2->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div4;   
-    PWM0->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div12; 
+    PWM0->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div4;
+    PWM1->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div4;
+    PWM2->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div4;
+    PWM0->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div12;
     PWM1->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div12;
     PWM2->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div12;
   }
   else if(presc == 55) {
-    PWM0->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div4;    
-    PWM1->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div4;   
-    PWM2->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div4;   
-    PWM0->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div14; 
+    PWM0->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div4;
+    PWM1->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div4;
+    PWM2->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div4;
+    PWM0->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div14;
     PWM1->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div14;
     PWM2->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div14;
   }
   else if(presc == 60) {
-    PWM0->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div8;    
-    PWM1->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div8;   
-    PWM2->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div8;   
-    PWM0->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div8; 
-    PWM1->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div8;
-    PWM2->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div8;
-  }
-  else if(presc == 60) {
-    PWM0->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div8;    
-    PWM1->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div8;   
-    PWM2->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div8;   
-    PWM0->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div8; 
+    PWM0->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div8;
+    PWM1->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div8;
+    PWM2->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div8;
+    PWM0->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div8;
     PWM1->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div8;
     PWM2->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div8;
   }
   else if(presc == 70) {
-    PWM0->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div8;    
-    PWM1->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div8;   
-    PWM2->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div8;   
-    PWM0->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div10; 
+    PWM0->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div8;
+    PWM1->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div8;
+    PWM2->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div8;
+    PWM0->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div10;
     PWM1->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div10;
     PWM2->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div10;
   }
   else if(presc == 80) {
-    PWM0->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div8;    
-    PWM1->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div8;   
-    PWM2->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div8;   
-    PWM0->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div12; 
+    PWM0->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div8;
+    PWM1->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div8;
+    PWM2->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div8;
+    PWM0->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div12;
     PWM1->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div12;
     PWM2->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div12;
   }
   else if(presc == 90) {
-    PWM0->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div8;    
-    PWM1->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div8;   
-    PWM2->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div8;   
-    PWM0->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div14; 
+    PWM0->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div8;
+    PWM1->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div8;
+    PWM2->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div8;
+    PWM0->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div14;
     PWM1->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div14;
     PWM2->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div14;
   }
@@ -165,10 +173,7 @@ void setDutyCycleAll(uint16_t newdc){
 
 void resetInputCaptureTimer()
 {
-  IC_TIMER_REGISTER->ECCTL0_bit.CAPLDEN = 0;
-  IC_TIMER_REGISTER->TSCTR = 0;
-  IC_TIMER_REGISTER->ECCTL1_bit.REARM = 1;
-  IC_TIMER_REGISTER->ECCTL0_bit.CAPLDEN = 1;
+  IC_TIMER_REGISTER->COUNT = 0;
 }
 
 void setPWMCompare1(uint16_t compareone)
@@ -188,9 +193,8 @@ void setPWMCompare3(uint16_t comparethree)
 }
 
 void enableCorePeripherals(){
-    COM_TIMER->CTRL_bit.INTEN = 0;
-    COM_TIMER->CTRL_bit.ON = 1;
-    COM_TIMER->CTRL_bit.ON = 1;
+    TMR_ITCmd(COM_TIMER, TMR_IT_TimerUpdate, DISABLE);
+    TMR_SetMode(COM_TIMER, TMR_Mode_Capcom_Up);
 
 #ifdef USE_ADC
     ADCInit();
@@ -202,48 +206,49 @@ void generatePwmTimerEvent(){
 
 void ALL_COMP_Init(void)
 {
-    RCU->HCLKCFG_bit.GPIOBEN = 1;
-    RCU->HRSTCFG_bit.GPIOBEN = 1;
-    GPIOB->DENSET_bit.PIN4 = 1;
-    GPIOB->DENSET_bit.PIN5 = 1;
-    GPIOB->DENSET_bit.PIN6 = 1;
+    // BEMF comparator inputs PB4 (A), PB5 (B), PB6 (C) — GPIO edge interrupts
     GPIOB->PULLMODE_bit.PIN4 = 0x01;
     GPIOB->PULLMODE_bit.PIN5 = 0x01;
     GPIOB->PULLMODE_bit.PIN6 = 0x01;
     GPIOB->INTTYPESET_bit.PIN4 = 1;
     GPIOB->INTTYPESET_bit.PIN5 = 1;
     GPIOB->INTTYPESET_bit.PIN6 = 1;
+    GPIOB->INTEDGESET_bit.PIN4 = 1;
+    GPIOB->INTEDGESET_bit.PIN5 = 1;
+    GPIOB->INTEDGESET_bit.PIN6 = 1;
+    GPIOB->INTSTATUS = 0xFFFFFFFF; // clear stale flags
 }
 
 void MX_IWDG_Init(void)
 {
+    /* WDT clock: WDTCFG.CLKSEL 00b = HSICLK 4 MHz (default) */
     RCU->WDTCFG_bit.CLKEN = 1;
     RCU->WDTCFG_bit.RSTDIS = 1;
-    WDT->LOAD = 200000;
+    WDT->LOAD = 200000; // 50 ms @ 4 MHz
     WDT->CTRL_bit.INTEN = 1;
     WDT->CTRL_bit.RESEN = 1;
 }
 
 void PWM_TIM1_Init(void)  //PWM
-{     
-    SIU->PWMSYNC_bit.PRESCRST = 0x07;
-    GPIOA->DENSET |= GPIO_DENSET_PIN8_Msk | GPIO_DENSET_PIN9_Msk | GPIO_DENSET_PIN10_Msk | GPIO_DENSET_PIN11_Msk | GPIO_DENSET_PIN12_Msk | GPIO_DENSET_PIN13_Msk;
+{
+    // select AF1 (PWM0_A/B, PWM1_A/B, PWM2_A/B) and enable altfunc push-pull outputs
+    GPIOA->ALTFUNCNUM_bit.PIN8 = 1;
+    GPIOA->ALTFUNCNUM_bit.PIN9 = 1;
+    GPIOA->ALTFUNCNUM_bit.PIN10 = 1;
+    GPIOA->ALTFUNCNUM_bit.PIN11 = 1;
+    GPIOA->ALTFUNCNUM_bit.PIN12 = 1;
+    GPIOA->ALTFUNCNUM_bit.PIN13 = 1;
+    GPIOA->ALTFUNCSET |= GPIO_ALTFUNCSET_PIN8_Msk | GPIO_ALTFUNCSET_PIN9_Msk | GPIO_ALTFUNCSET_PIN10_Msk | GPIO_ALTFUNCSET_PIN11_Msk | GPIO_ALTFUNCSET_PIN12_Msk | GPIO_ALTFUNCSET_PIN13_Msk;
+    GPIOA->OUTENSET |= GPIO_OUTENSET_PIN8_Msk | GPIO_OUTENSET_PIN9_Msk | GPIO_OUTENSET_PIN10_Msk | GPIO_OUTENSET_PIN11_Msk | GPIO_OUTENSET_PIN12_Msk | GPIO_OUTENSET_PIN13_Msk;
 
-    RCU->PCLKCFG_bit.PWM0EN = 1;
-    RCU->PRSTCFG_bit.PWM0EN = 1;
-    RCU->PCLKCFG_bit.PWM1EN = 1;
-    RCU->PRSTCFG_bit.PWM1EN = 1;
-    RCU->PCLKCFG_bit.PWM2EN = 1;
-    RCU->PRSTCFG_bit.PWM2EN = 1;
-    PWM0->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div2;        //48 KHz
-    PWM0->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div1; //48 KHz
-    PWM1->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div2;        //48 KHz
-    PWM1->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div1; //48 KHz
-    PWM2->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div2;        //48 KHz
-    PWM2->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div1; //48 KHz 
-    PWM0->ETSEL_bit.SOCAEN = 1; 
-    PWM0->ETSEL_bit.SOCASEL = PWM_ETSEL_INTSEL_CTREqZero; 
-    PWM0->TBCTL_bit.SYNCOSEL = PWM_TBCTL_SYNCOSEL_CTREqZero;    
+    PWM0->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div2;        //48 MHz -> 24 KHz
+    PWM0->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div1;
+    PWM1->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div2;        //48 MHz -> 24 KHz
+    PWM1->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div1;
+    PWM2->TBCTL_bit.CLKDIV = PWM_TBCTL_CLKDIV_Div2;        //48 MHz -> 24 KHz
+    PWM2->TBCTL_bit.HSPCLKDIV = PWM_TBCTL_HSPCLKDIV_Div1;
+    PWM0->ETSEL_bit.SOCAEN = 1;
+    PWM0->ETSEL_bit.SOCASEL = PWM_ETSEL_INTSEL_CTREqZero;
     PWM0->TBPRD = TIM1_AUTORELOAD; //24 KHz
     PWM0->AQCTLA_bit.PRD = PWM_AQCTLA_PRD_Set;
     PWM0->AQCTLA_bit.CAU = PWM_AQCTLA_CAU_Clear;
@@ -274,216 +279,188 @@ void PWM_TIM1_Init(void)  //PWM
     PWM0->DBCTL_bit.INMODE =  0;
     PWM1->DBCTL_bit.INMODE =  0;
     PWM2->DBCTL_bit.INMODE =  0;
+
+    // single write to SIU->CNTEN starts all three PWM counters in sync
+    SIU->CNTEN = SIU_CNTEN_PWM0EN_Msk | SIU_CNTEN_PWM1EN_Msk | SIU_CNTEN_PWM2EN_Msk;
 }
 
-void ZC_TIM4_Init(void)
+void ZC_TIM2_Init(void)
 {
-    RCU->PCLKCFG_bit.INTERVAL_TIMER_EN = 1;
-    RCU->PRSTCFG_bit.INTERVAL_TIMER_EN = 1;
-    INTERVAL_TIMER->VALUE = 0xFFFFFFFF;
-    INTERVAL_TIMER->LOAD = 0;
-    INTERVAL_TIMER->CTRL_bit.ON = 1;
+    // free-running zero-cross interval timer
+    TMR_SetDivider(INTERVAL_TIMER, 0);
+    INTERVAL_TIMER->COUNT = 0;
+    TMR_SetMode(INTERVAL_TIMER, TMR_Mode_Multiple);
+    SIU->CNTEN |= SIU_CNTEN_TMR2EN_Msk;
 }
 
-void disableComTimerInt() 
+void disableComTimerInt()
 {
-    COM_TIMER->CTRL_bit.INTEN = 0;
+    TMR_ITCmd(COM_TIMER, TMR_IT_TimerUpdate, DISABLE);
 }
 
-void enableComTimerInt() 
+void enableComTimerInt()
 {
-    COM_TIMER->CTRL_bit.INTEN = 1;
+    TMR_ITCmd(COM_TIMER, TMR_IT_TimerUpdate, ENABLE);
 }
+
+/* preset added into getintervaTimerCount() so that it returns the last
+ * SET_INTERVAL_TIMER_COUNT() value immediately, like the vk035 down-counter */
+static uint32_t interval_preset_ticks = 0;
 
 uint16_t getintervaTimerCount()
 {
-  uint16_t temp = (0xFFFFFFFF - INTERVAL_TIMER->VALUE) / 50;
-  return temp;
+  return (uint16_t)((INTERVAL_TIMER->COUNT + interval_preset_ticks) / TIMER_TICKS_PER_HALFUS);
 }
 
 void setintervaTimerCount(uint16_t intertime)
 {
-    INTERVAL_TIMER->VALUE = (0xFFFFFFFF - (intertime * 50));
+  interval_preset_ticks = (uint32_t)intertime * TIMER_TICKS_PER_HALFUS;
+  INTERVAL_TIMER->COUNT = 0;
 }
 
 void setAndEnableComInt(uint16_t time)
 {
-    COM_TIMER->VALUE = time * 50;
-    COM_TIMER->INTSTATUS_bit.INT = 1;
-    COM_TIMER->CTRL_bit.INTEN = 1;
+    COM_TIMER->COUNT = 0;
+    COM_TIMER->PERIOD = (uint32_t)time * TIMER_TICKS_PER_HALFUS;
+    TMR_ITClear(COM_TIMER, TMR_IT_TimerUpdate);
+    TMR_ITCmd(COM_TIMER, TMR_IT_TimerUpdate, DISABLE); // re-enabled below
+    TMR_SetMode(COM_TIMER, TMR_Mode_Capcom_Up);
+    TMR_ITCmd(COM_TIMER, TMR_IT_TimerUpdate, ENABLE);
 }
 
-void TENKHz_SysTick_Init(void) 
+void TENKHz_SysTick_Init(void)
 {
-    SysTick_Config(5000 - 1);
-    NVIC_EnableIRQ(SysTick_IRQn);
-    NVIC_SetPriority(SysTick_IRQn, 0xF);
+    /* 20 kHz control loop tick from the RISC-V machine timer.
+     * After reset mtimer runs from the core clock (CLKSRC=0, DIVIDER=0,
+     * UM 10.1) = 96 MHz. mtimer_set_raw_time_cmp() raises MTI (mcause 7). */
+    riscv_irq_init();
+    riscv_irq_set_handler(RISCV_IRQ_MTI, MTIMER_IRQHandler);
+    // route external (PLIC) interrupts through the same trap entry
+    riscv_irq_set_handler(RISCV_IRQ_MEI, PLIC_MachHandler);
+    riscv_irq_enable(RISCV_IRQ_MTI);
+    riscv_irq_enable(RISCV_IRQ_MEI);
+    riscv_irq_global_enable();
+    mtimer_set_raw_time_cmp(MTIME_FREQ_HZ / LOOP_FREQUENCY_HZ);
 }
 
 void reloadWatchDogCounter()
 {
-    WDT->INTCLR = 1; 
+    WDT->INTCLR = 1;
 }
 
-void COM_TIM3_Init(void)
+void COM_TIM1_Init(void)
 {
-    RCU->PCLKCFG_bit.COM_TIMER_EN = 1;
-    RCU->PRSTCFG_bit.COM_TIMER_EN = 1;
-    COM_TIMER->VALUE = 0xFFFFFFFF;
-    COM_TIMER->LOAD = 0;
-    COM_TIMER->CTRL_bit.INTEN = 1;
-    __NVIC_EnableIRQ(COM_TIMER_IRQ);  
-    NVIC_SetPriority(COM_TIMER_IRQ, 0x0);
+    TMR_SetDivider(COM_TIMER, 0);
+    COM_TIMER->COUNT = 0;
+    COM_TIMER->PERIOD = 0xFFFFFFFF;
+    TMR_SetMode(COM_TIMER, TMR_Mode_Stop);
+    SIU->CNTEN |= SIU_CNTEN_TMR1EN_Msk;
 }
 
 void MX_TIM16_Init(void)
 {
-    RCU->PCLKCFG_bit.DELAY_TIMER_EN = 1;
-    RCU->PRSTCFG_bit.DELAY_TIMER_EN = 1;
-    DELAY_TIMER->LOAD = 0;
+    // blocking us-delay timer
+    TMR_SetDivider(DELAY_TIMER, 0);
+    DELAY_TIMER->COUNT = 0;
+    DELAY_TIMER->PERIOD = 0xFFFFFFFF;
+    TMR_SetMode(DELAY_TIMER, TMR_Mode_Stop);
+    SIU->CNTEN |= SIU_CNTEN_TMR3EN_Msk;
 }
 
-void MX_TIM17_Init(void) 
+void MX_TIM17_Init(void)
 {
 }
 
 void ALL_DMA_Init(void)
 {
+    // DMA controller clock + reset release (CGCFGAPB.DMAEN / RSTDISAPB.DMAEN)
+    RCU->CGCFGAPB_bit.DMAEN = 1;
+    RCU->RSTDISAPB_bit.DMAEN = 1;
+    DMA_DeInit();
 }
 
 void ALL_GPIO_Init(void)
 {
-    RCU->HCLKCFG_bit.GPIOBEN = 1;
-    RCU->HRSTCFG_bit.GPIOBEN = 1;
-    RCU->HCLKCFG_bit.GPIOAEN = 1;
-    RCU->HRSTCFG_bit.GPIOAEN = 1;
-    NVIC_EnableIRQ(GPIOB_IRQn);
-    NVIC_SetPriority(GPIOB_IRQn, 0x2);
+    RCU->CGCFGAHB_bit.GPIOBEN = 1;
+    RCU->RSTDISAHB_bit.GPIOBEN = 1;
+    RCU->CGCFGAHB_bit.GPIOAEN = 1;
+    RCU->RSTDISAHB_bit.GPIOAEN = 1;
 }
 
 extern uint32_t dma_buffer[64];
-uint32_t rawBuffer[64] __attribute__((section(".ram_section"))) __attribute__((aligned(4))) = { 0 };
-static volatile DMA_CtrlData_TypeDef DMA_CONFIGDATA __attribute__((aligned(1024)));
-extern uint32_t volatile gcr[37];
 
-void UN_TIM2_Init(void) 
+/* arm DMA channel 0: CAPCOM_VAL0 -> dma_buffer[], paced by TMR0 capture events */
+void updateDma() {
+  DMA_CH_ActiveCmd(DMA_Channel_0, DISABLE);
+  DMA_ChannelEnableCmd(DMA_Channel_MSK(DMA_Channel_0), DISABLE);
+  DMA_CH_SrcPtrConfig(DMA_Channel_0, (uint32_t)&TMR0->CAPCOM[0].VAL0);
+  DMA_CH_DstPtrConfig(DMA_Channel_0, (uint32_t)&dma_buffer[0]);
+  DMA_CH_DataSizeConfig(DMA_Channel_0, buffersize);   // NDTL: transfers
+  DMA_CH_SrcDataSizeConfig(DMA_Channel_0, DMA_DataSize_32);
+  DMA_CH_DstDataSizeConfig(DMA_Channel_0, DMA_DataSize_32);
+  DMA_CH_SrcDataIncConfig(DMA_Channel_0, DISABLE);
+  DMA_CH_DstDataIncConfig(DMA_Channel_0, ENABLE);
+  DMA_CH_ReadPeripheralNumConfig(DMA_Channel_0, TMR0_DMA_REQUESTOR_IDX);
+  DMA_CH_WritePeripheralNumConfig(DMA_Channel_0, MEMORY_DMA_REQUESTOR_IDX);
+  DMA->CH[DMA_Channel_0].CONFIG_bit.CMD_SET_INT = 1;
+  DMA->CH[DMA_Channel_0].CONFIG_bit.CMD_LAST = 1;
+  DMA->CH[DMA_Channel_0].INT_ENABLE = DMA_CH_INT_ENABLE_CH_END_Msk;
+  DMA->CH[DMA_Channel_0].INT_CLEAR = DMA_CH_INT_RAWSTAT_CH_END_Msk;
+  DMA_ChannelEnableCmd(DMA_Channel_MSK(DMA_Channel_0), ENABLE);
+  DMA_CH_StartCmd(DMA_Channel_0);
+}
+
+/* arm DMA channel 1: gcr[] -> TMR0 CAPCOM_VAL1, paced by TMR0 period events */
+void updateDmaTransmit() {
+  DMA_CH_ActiveCmd(DMA_Channel_1, DISABLE);
+  DMA_ChannelEnableCmd(DMA_Channel_MSK(DMA_Channel_1), DISABLE);
+  DMA_CH_SrcPtrConfig(DMA_Channel_1, (uint32_t)&gcr[buffer_padding]);
+  DMA_CH_DstPtrConfig(DMA_Channel_1, (uint32_t)&TMR0->CAPCOM[0].VAL1);
+  DMA_CH_DataSizeConfig(DMA_Channel_1, 22);           // NDTL: 22 words
+  DMA_CH_SrcDataSizeConfig(DMA_Channel_1, DMA_DataSize_32);
+  DMA_CH_DstDataSizeConfig(DMA_Channel_1, DMA_DataSize_32);
+  DMA_CH_SrcDataIncConfig(DMA_Channel_1, ENABLE);
+  DMA_CH_DstDataIncConfig(DMA_Channel_1, DISABLE);
+  DMA_CH_ReadPeripheralNumConfig(DMA_Channel_1, MEMORY_DMA_REQUESTOR_IDX);
+  DMA_CH_WritePeripheralNumConfig(DMA_Channel_1, TMR0_DMA_REQUESTOR_IDX);
+  DMA->CH[DMA_Channel_1].CONFIG_bit.CMD_SET_INT = 1;
+  DMA->CH[DMA_Channel_1].CONFIG_bit.CMD_LAST = 1;
+  DMA->CH[DMA_Channel_1].INT_ENABLE = DMA_CH_INT_ENABLE_CH_END_Msk;
+  DMA->CH[DMA_Channel_1].INT_CLEAR = DMA_CH_INT_RAWSTAT_CH_END_Msk;
+  DMA_ChannelEnableCmd(DMA_Channel_MSK(DMA_Channel_1), ENABLE);
+  DMA_CH_StartCmd(DMA_Channel_1);
+}
+
+void setDmaCnt(uint8_t size) {
+  DMA_CH_DataSizeConfig(DMA_Channel_0, size);
+}
+
+void reverseBuffer() {
+  // not needed on VG5T: TMR0 counts up, captures are direct elapsed timestamps
+}
+
+void UN_TIM0_Init(void)
 {
-    RCU->PCLKCFG_bit.ECAP1EN = 1;
-    RCU->PRSTCFG_bit.ECAP1EN = 1;
-    RCU->HCLKCFG_bit.GPIOAEN = 1;
-    RCU->HRSTCFG_bit.GPIOAEN = 1;
-    //SIU->REMAPAF_bit.ECAP1EN = 1;
-    GPIO_LockKeyCmd(GPIOA, ENABLE);
-    GPIOA->ALTFUNCCLR_bit.PIN5 = 1;
-    GPIOA->LOCKCLR_bit.PIN5 = 1;
-    GPIOA->DENSET_bit.PIN5 = 1;
-    GPIOA->INMODE_bit.PIN5 = 0;
-    GPIOA->DMAREQSET_bit.PIN5 = 1;
-    GPIOA->INTTYPESET_bit.PIN5 = 1;
-    GPIOA->INTEDGESET_bit.PIN5 = 1;
-    //GPIOA->INTPOLSET_bit.PIN5 = 1;
-    //GPIOA->INTENSET_bit.PIN5 = 1;
-    // GPIOA->LOCKCLR_bit.PIN7 = 1;
-    // GPIOA->ALTFUNCCLR_bit.PIN7 = 1;
-    // GPIOA->DENSET_bit.PIN7 = 1;
-    // GPIOA->OUTENSET_bit.PIN7 = 1;
+    RCU->CGCFGAPB_bit.TMR0EN = 1;
+    RCU->RSTDISAPB_bit.TMR0EN = 1;
 
-    RCU->PCLKCFG_bit.TMR3EN = 1;
-    RCU->PRSTCFG_bit.TMR3EN = 1;
-    TMR3->VALUE = 0xFFFFFFFF;
-    TMR3->LOAD = 0xFFFFFFFF;
-    //TMR3->CTRL_bit.ON = 1;
+    // PA14 -> AF1 = TMR0_IO, alternate function input
+    GPIOA->ALTFUNCNUM_bit.PIN14 = 1;
+    GPIOA->ALTFUNCSET_bit.PIN14 = 1;
+    GPIOA->OUTENCLR = GPIO_OUTENSET_PIN14_Msk;
 
-    DMA->BASEPTR = (uint32_t)(&DMA_CONFIGDATA); 
+    // capture source for TMR0 CCIA = external pin TMR0_IO (SIU->TMRMUX.TMR0CCIA = 0)
+    SIU->TMRMUX_bit.TMR0CCIA = 0x0;
 
-    // RCU->HCLKCFG_bit.GPIOAEN = 1;
-    // RCU->HRSTCFG_bit.GPIOAEN = 1;
-    // SIU->REMAPAF_bit.ECAP1EN = 1;
-    // GPIOA->DENSET_bit.PIN5 = 1;
-    // GPIOA->ALTFUNCSET_bit.PIN5 = 1;
-    IC_TIMER_REGISTER->ECCTL1_bit.CAPAPWM = 1;
-    IC_TIMER_REGISTER->ECCTL1_bit.APWMPOL = 1;
-    IC_TIMER_REGISTER->PRD = 256;
-    IC_TIMER_REGISTER->CMP = 0;
-    // Инициализация канала на прием RX (3-й канал DMA) 
-    /* источник */
-    DMA->ENSET_bit.CH8 = 1; //Включаем канала DMA 1 
-    DMA->ENSET_bit.CH12 = 1; //Включаем канала DMA 1 
-    DMA_CONFIGDATA.PRM_DATA.CH[12].SRC_DATA_END_PTR = (uint32_t)&(gcr[buffer_padding + 21]); //Адрес конца источника данных (последний заполненный элемент)
-    DMA_CONFIGDATA.PRM_DATA.CH[12].CHANNEL_CFG_bit.SRC_SIZE = DMA_CHANNEL_CFG_SRC_SIZE_Word; //Разрядность данных источника
-    DMA_CONFIGDATA.PRM_DATA.CH[12].CHANNEL_CFG_bit.SRC_INC =  DMA_CHANNEL_CFG_SRC_INC_Word; // Инкрементируем источник по словам
-    /* приемник */
-    DMA_CONFIGDATA.PRM_DATA.CH[12].DST_DATA_END_PTR = (uint32_t )(&IC_TIMER_REGISTER->CMP); //Адрес конца данных приемника
-    DMA_CONFIGDATA.PRM_DATA.CH[12].CHANNEL_CFG_bit.DST_SIZE = DMA_CHANNEL_CFG_SRC_SIZE_Word; //Разрядность данных приемника
-    DMA_CONFIGDATA.PRM_DATA.CH[12].CHANNEL_CFG_bit.DST_INC = DMA_CHANNEL_CFG_DST_INC_None; //Инкрементируем на байт
-    /* общее */
-    DMA_CONFIGDATA.PRM_DATA.CH[12].CHANNEL_CFG_bit.R_POWER = 0x0; // Количество передач до переарбитрации
-    DMA_CONFIGDATA.PRM_DATA.CH[12].CHANNEL_CFG_bit.N_MINUS_1 = 22 - 1; //Общее количество передач DMA (22 слов: gcr[buffer_padding]..gcr[buffer_padding+21])
-    DMA_CONFIGDATA.PRM_DATA.CH[12].CHANNEL_CFG_bit.CYCLE_CTRL = DMA_CHANNEL_CFG_CYCLE_CTRL_Basic; //Задание типа цикла DMA 
+    // TMR0 free-running, CAPCOM in capture mode on both edges
+    TMR_SetDivider(IC_TIMER_REGISTER, 0);
+    IC_TIMER_REGISTER->COUNT = 0;
+    IC_TIMER_REGISTER->CAPCOM[0].CTRL_bit.CAP = 1;      // capture mode
+    IC_TIMER_REGISTER->CAPCOM[0].CTRL_bit.CCISEL = 0;   // CCIA
+    IC_TIMER_REGISTER->CAPCOM[0].CTRL_bit.CAPMODE = 3;  // both edges
+    IC_TIMER_REGISTER->DMA_RXIM_bit.CAPCOM0_0 = 1;      // DMA RX request on capture
+    IC_TIMER_REGISTER->DMA_TXIM_bit.TMR = 0;
+    TMR_SetMode(IC_TIMER_REGISTER, TMR_Mode_Multiple);
 
-    DMA_CONFIGDATA.PRM_DATA.CH[8].SRC_DATA_END_PTR = (uint32_t)(&TMR3->VALUE); //Адрес источника данных 
-    DMA_CONFIGDATA.PRM_DATA.CH[8].CHANNEL_CFG_bit.SRC_SIZE = DMA_CHANNEL_CFG_SRC_SIZE_Word; //Разрядность данных источника
-    DMA_CONFIGDATA.PRM_DATA.CH[8].CHANNEL_CFG_bit.SRC_INC =  DMA_CHANNEL_CFG_SRC_INC_None; // Не инкрементируем
-    /* приемник */
-    DMA_CONFIGDATA.PRM_DATA.CH[8].DST_DATA_END_PTR = (uint32_t )&(rawBuffer[32-1]); //Адрес конца данных приемника
-    DMA_CONFIGDATA.PRM_DATA.CH[8].CHANNEL_CFG_bit.DST_SIZE = DMA_CHANNEL_CFG_SRC_SIZE_Word; //Разрядность данных приемника
-    DMA_CONFIGDATA.PRM_DATA.CH[8].CHANNEL_CFG_bit.DST_INC = DMA_CHANNEL_CFG_DST_INC_Word; //Инкрементируем на байт
-    /* общее */
-    DMA_CONFIGDATA.PRM_DATA.CH[8].CHANNEL_CFG_bit.R_POWER = 0x0; // Количество передач до переарбитрации
-    DMA_CONFIGDATA.PRM_DATA.CH[8].CHANNEL_CFG_bit.N_MINUS_1 = 32 - 1; //Общее количество передач DMA
-    DMA_CONFIGDATA.PRM_DATA.CH[8].CHANNEL_CFG_bit.CYCLE_CTRL = DMA_CHANNEL_CFG_CYCLE_CTRL_Basic; //Задание типа цикла DMA 
-
-
-    NVIC_EnableIRQ(ADC_SEQ1_IRQn);
-    NVIC_SetPriority(ADC_SEQ1_IRQn, 3);
-    //DMA->USEBURSTSET_bit.CH8 = 1;
-    // Инциализация контроллера DMA
-
-    //DMA->ENSET_bit.CH12 = 1; //Включаем канала DMA 1 
-    //DMA->CFG_bit.MASTEREN = 1; //Бит разрешения работы контролера DMA
-    // NVIC прерывания DMA
-    // NVIC_EnableIRQ(DMA_CH8_IRQn); 
-    // NVIC_SetPriority(DMA_CH8_IRQn, 0xA);
-
-
-    DMA_ChannelMuxConfig(DMA_ChannelMux_8, DMA_ChannelMux_8_GPIOA);
-    DMA_ChannelMuxConfig(DMA_ChannelMux_12, DMA_ChannelMux_12_TMR3);
-    DMA->ENSET_bit.CH8 = 0; //Включаем канала DMA 1 
-    DMA->ENSET_bit.CH12 = 0; //Включаем канала DMA 1 
-   // DMA->CFG_bit.MASTEREN = 1; //Бит разрешения работы контролера DMA
-}
-
-__RAMFUNC void updateDma() {
-  NVIC_DisableIRQ(DMA_CH12_IRQn); 
-  NVIC_EnableIRQ(DMA_CH8_IRQn); 
-  NVIC_SetPriority(DMA_CH8_IRQn, 0x20);
-  DMA->ENSET_bit.CH12 = 0;
-  DMA_CONFIGDATA.PRM_DATA.CH[8].CHANNEL_CFG_bit.R_POWER = 0x0; // Количество передач до переарбитрации
-  DMA_CONFIGDATA.PRM_DATA.CH[8].CHANNEL_CFG_bit.N_MINUS_1 = buffersize - 1; //Общее количество передач DMA
-  DMA_CONFIGDATA.PRM_DATA.CH[8].CHANNEL_CFG_bit.CYCLE_CTRL = DMA_CHANNEL_CFG_CYCLE_CTRL_Basic; //Задание типа цикла DMA 
-  DMA_CONFIGDATA.PRM_DATA.CH[8].DST_DATA_END_PTR = (uint32_t )&(rawBuffer[buffersize - 1]);
-  DMA->ENSET_bit.CH8 = 1;
-}
-
-__RAMFUNC void updateDmaTransmit() {
-  NVIC_DisableIRQ(DMA_CH8_IRQn); 
-  NVIC_EnableIRQ(DMA_CH12_IRQn); 
-  NVIC_SetPriority(DMA_CH12_IRQn, 0x20);
-  DMA->ENSET_bit.CH8 = 0;
-  DMA_CONFIGDATA.PRM_DATA.CH[12].CHANNEL_CFG_bit.R_POWER = 0x0; // Количество передач до переарбитрации
-  DMA_CONFIGDATA.PRM_DATA.CH[12].CHANNEL_CFG_bit.N_MINUS_1 = 22 - 1; //Общее количество передач DMA (22 слов)
-  DMA_CONFIGDATA.PRM_DATA.CH[12].CHANNEL_CFG_bit.CYCLE_CTRL = DMA_CHANNEL_CFG_CYCLE_CTRL_Basic; //Задание типа цикла DMA 
-  DMA_CONFIGDATA.PRM_DATA.CH[12].SRC_DATA_END_PTR = (uint32_t)&(gcr[buffer_padding + 21]); //Адрес конца источника данных
-  DMA->ENSET_bit.CH12 = 1;
-}
-
-__RAMFUNC void setDmaCnt(uint8_t size) {
-  DMA_CONFIGDATA.PRM_DATA.CH[8].DST_DATA_END_PTR = (uint32_t )&(rawBuffer[buffersize - 1]);
-  DMA_CONFIGDATA.PRM_DATA.CH[8].CHANNEL_CFG_bit.N_MINUS_1 = buffersize - 1;
-}
-
-__RAMFUNC void reverseBuffer() {
-  for(uint8_t i = 0; i < 32; i++) {
-    dma_buffer[i] = ~rawBuffer[i];
-  }
+    SIU->CNTEN |= SIU_CNTEN_TMR0EN_Msk;
 }

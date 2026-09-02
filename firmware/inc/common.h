@@ -9,6 +9,13 @@
 #define __RAMFUNC
 #endif
 
+#ifdef MCU_K19XXVG5T
+#include "riscv-irq.h"
+#define __disable_irq() riscv_irq_global_disable()
+#define __enable_irq()  riscv_irq_global_enable()
+#define NVIC_SystemReset() (RCU->RSTSYS = 0xA55A0001UL) // KEY='A55A' | RSTEN
+#endif
+
 extern EEprom_t eepromBuffer;
 extern uint32_t eeprom_address;
 extern uint16_t TIMER1_MAX_ARR;

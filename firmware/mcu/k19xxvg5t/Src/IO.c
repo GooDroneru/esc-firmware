@@ -1,5 +1,11 @@
 /*
- * IO.c
+ * IO.c — signal input/output on PA14 (TMR0_IO) for K1921VG5T
+ *
+ * RX: TMR0 CAPCOM captures both edges into CAPCOM_VAL0, DMA channel 0 moves
+ *     timestamps into dma_buffer[], completion IRQ -> transfercomplete().
+ * TX: TMR0 CAPCOM in compare mode generates the GCR waveform on PA14
+ *     (OUTMODE=7: reset at VAL0=0, set at VAL1), DMA channel 1 feeds the next
+ *     pulse width into CAPCOM_VAL1 on every period event.
  *
  *  Created on: Sep. 26, 2020
  *      Author: Alka
@@ -16,7 +22,7 @@
 
 uint8_t buffer_padding = 7;
 char ic_timer_prescaler = CPU_FREQUENCY_MHZ / 5;
-uint32_t dma_buffer[64] __attribute__((section(".ram_section"))) __attribute__((aligned(4))) = { 0 };
+uint32_t dma_buffer[64] __attribute__((aligned(4)));
 
 char out_put = 0;
 extern uint16_t counter;
@@ -27,51 +33,56 @@ extern uint16_t bitShift;
 
 __RAMFUNC void changeToInput()
 {
-    GPIOA->ALTFUNCCLR_bit.PIN5 = 1;
+    // stop output path
+    TMR0->DMA_TXIM_bit.TMR = 0;
+    TMR_SetMode(IC_TIMER_REGISTER, TMR_Mode_Stop);
+
+    // capture mode: both edges of TMR0_IO (PA14) -> CAPCOM[0].VAL0 -> DMA ch0
+    IC_TIMER_REGISTER->CAPCOM[0].CTRL_bit.CAP = 1;
+    IC_TIMER_REGISTER->CAPCOM[0].CTRL_bit.CCISEL = 0;   // CCIA = TMR0_IO (SIU->TMRMUX)
+    IC_TIMER_REGISTER->CAPCOM[0].CTRL_bit.CAPMODE = 3;  // both edges
+    IC_TIMER_REGISTER->CAPCOM[0].CTRL_bit.OUTMODE = 0;
+    IC_TIMER_REGISTER->COUNT = 0;
+
     updateDma();
-    TMR3->DMAREQ_bit.EN = 0;
-    SIU->REMAPAF_bit.ECAP1EN = 0;
-    TMR3->CTRL_bit.ON = 0;
-    TMR3->VALUE = 0xFFFFFFFF;
-    TMR3->LOAD = 0xFFFFFFFF;
-    IC_TIMER_REGISTER->ECCTL1_bit.TSCTRSTOP = 0;
-    IC_TIMER_REGISTER->TSCTR = 0;
-    GPIOA->DMAREQSET_bit.PIN5 = 1;
-    DMA->CFG_bit.MASTEREN = 1; //Бит разрешения работы контролера DMA
-    TMR3->CTRL_bit.ON = 1;
+
+    IC_TIMER_REGISTER->DMA_RXIM_bit.CAPCOM0_0 = 1;   // DMA request per capture
+
+    // PA14 = alternate function input
+    GPIOA->ALTFUNCSET_bit.PIN14 = 1;
+    GPIOA->OUTENCLR = GPIO_OUTENSET_PIN14_Msk;
+
+    TMR_SetMode(IC_TIMER_REGISTER, TMR_Mode_Multiple);
 }
 
-
-
 __RAMFUNC void receiveDshotDma()
-{   
-    if(servoPwm == 1) {
-        //GPIOA->INTEDGECLR_bit.PIN5 = 1;
-        //GPIOA->INTPOLSET_bit.PIN5 = 1;
-    }
-    //setDmaCnt(buffersize);
+{
     out_put = 0;
     changeToInput();
-
 }
 
 __RAMFUNC void changeToOutput()
 {
+    // compare mode: TMR0 period = periodTime, output set at VAL1 (gcr pulse)
+    TMR0->DMA_RXIM_bit.CAPCOM0_0 = 0;
+    TMR_SetMode(IC_TIMER_REGISTER, TMR_Mode_Stop);
+
+    IC_TIMER_REGISTER->CAPCOM[0].CTRL_bit.CAP = 0;
+    IC_TIMER_REGISTER->CAPCOM[0].CTRL_bit.OUTMODE = 7;  // reset @ VAL0, set @ VAL1
+    IC_TIMER_REGISTER->CAPCOM[0].VAL0 = 0;
+    IC_TIMER_REGISTER->CAPCOM[0].VAL1 = 0;
+    IC_TIMER_REGISTER->COUNT = 0;
+    IC_TIMER_REGISTER->PERIOD = periodTime;
+
     updateDmaTransmit();
-    TMR3->CTRL_bit.ON = 0;
-    TMR3->VALUE = periodTime / 2;
-    TMR3->LOAD = periodTime;
-    TMR3->DMAREQ_bit.EN = 1;
-    IC_TIMER_REGISTER->TSCTR = 0;
-    // counter++;
-    IC_TIMER_REGISTER->CMP = 0;
-    IC_TIMER_REGISTER->ECCTL1_bit.CONTOST = 1;
-    IC_TIMER_REGISTER->ECCTL1_bit.TSCTRSTOP = 1;
-    SIU->REMAPAF_bit.ECAP1EN = 1;
-    GPIOA->ALTFUNCSET_bit.PIN5 = 1;
-    GPIOA->DMAREQCLR_bit.PIN5 = 1;
-    DMA->CFG_bit.MASTEREN = 1; //Бит разрешения работы контролера DMA
-    TMR3->CTRL_bit.ON = 1;
+
+    IC_TIMER_REGISTER->DMA_TXIM_bit.TMR = 1;         // DMA request per period
+
+    // PA14 = alternate function output
+    GPIOA->ALTFUNCSET_bit.PIN14 = 1;
+    GPIOA->OUTENSET_bit.PIN14 = 1;
+
+    TMR_SetMode(IC_TIMER_REGISTER, TMR_Mode_Capcom_Up);
 }
 
 __RAMFUNC void sendDshotDma()

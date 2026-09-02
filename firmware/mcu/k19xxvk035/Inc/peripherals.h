@@ -66,6 +66,7 @@ void reverseBuffer();
 void updateDmaTransmit();
 void setDmaCnt(uint8_t size);
 
+
 #endif /* PERIPHERALS_H_ */
 
 

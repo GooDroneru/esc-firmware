@@ -10,6 +10,8 @@
 #include "main.h"
 #include "plib5t_gpio.h"
 
+/* BEMF comparator inputs: PB4 = phase A, PB5 = phase B, PB6 = phase C.
+ * The *_COMP macros expand to the GPIO PINx bitfield member names. */
 #define PHASE_A_COMP PIN4
 #define PHASE_B_COMP PIN5
 #define PHASE_C_COMP PIN6

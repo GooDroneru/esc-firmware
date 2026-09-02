@@ -52,6 +52,7 @@ Module.symvers
 
 # CMake build directory
 build/
+build-*/
 
 # CMake generated files
 CMakeCache.txt

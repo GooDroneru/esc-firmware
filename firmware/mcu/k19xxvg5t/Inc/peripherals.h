@@ -10,11 +10,12 @@
 
 #include "main.h"
 #include "ADC.h"
+#include "targets.h"
 
 #define INTERVAL_TIMER_COUNT (getintervaTimerCount())
 #define RELOAD_WATCHDOG_COUNTER() (WDT_ITStatusClear())
-#define DISABLE_COM_TIMER_INT() (COM_TIMER->CTRL_bit.INTEN = 0)
-#define ENABLE_COM_TIMER_INT() (COM_TIMER->CTRL_bit.INTEN = 1)
+#define DISABLE_COM_TIMER_INT() (TMR_ITCmd(COM_TIMER, TMR_IT_TimerUpdate, DISABLE))
+#define ENABLE_COM_TIMER_INT() (TMR_ITCmd(COM_TIMER, TMR_IT_TimerUpdate, ENABLE))
 #define SET_AND_ENABLE_COM_INT(time) (setAndEnableComInt(time))
 #define SET_INTERVAL_TIMER_COUNT(intertime) (setintervaTimerCount(intertime))
 #define SET_PRESCALER_PWM(presc) (setPrescalerPWM(presc))
@@ -35,16 +36,15 @@ void initCorePeripherals(void);
 void SystemClock_Config(void);
 void ALL_GPIO_Init(void);
 void ALL_DMA_Init(void);
-//static void MX_ADC_Init(void);
 void ALL_COMP_Init(void);
 void PWM_TIM1_Init(void);
-void ZC_TIM4_Init(void);
+void ZC_TIM2_Init(void);
 void MX_IWDG_Init(void);
 void MX_TIM16_Init(void);
-void COM_TIM3_Init(void);
+void COM_TIM1_Init(void);
 void TENKHz_SysTick_Init(void);
 void MX_TIM17_Init(void);
-void UN_TIM2_Init(void);
+void UN_TIM0_Init(void);
 void LED_GPIO_init(void);
 void disableComTimerInt(void);
 void enableComTimerInt(void);
@@ -65,12 +65,13 @@ void updateDma();
 void reverseBuffer();
 void updateDmaTransmit();
 void setDmaCnt(uint8_t size);
+void PlicIrqSetup(void);
+void MTIMER_IRQHandler(void);
+void COM_TIMER_IRQHandler(void);
+void GPIOB_IRQHandler(void);
+void ADC_SEQ0_IRQHandler(void);
+void DMA_CH0_IRQHandler(void);
+void DMA_CH1_IRQHandler(void);
+void UART0_TD_IRQHandler(void);
 
 #endif /* PERIPHERALS_H_ */
-
-
-
-
-
-
-

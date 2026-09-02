@@ -93,16 +93,16 @@ __RAMFUNC void computeDshotDMA()
 					high_pin_count++;
                     if (high_pin_count > 100) {
 						dshot_telemetry = 1;
-#ifdef K19XXVK035
+#if defined(K19XXVK035) || defined(K19XXVG5T)
 						if(halfpulsetime > 0x72) {
 							periodTime = 256;
 							bitShift = 8;
-							IC_TIMER_REGISTER->PRD = periodTime;
+							ic_timer_set_period(periodTime);
 						}
 						else {
 							periodTime = 128;
 							bitShift = 7;
-							IC_TIMER_REGISTER->PRD = periodTime;
+							ic_timer_set_period(periodTime);
 						}
 #elif defined(CH32V203)
 						if(halfpulsetime > 0x39) {
@@ -230,7 +230,7 @@ __RAMFUNC void computeDshotDMA()
 					//	NVIC_SystemReset();
 						break;
 					case 13:
-#ifdef K19XXVK035
+#if defined(K19XXVK035) || defined(K19XXVG5T)
 						dshot_extended_telemetry = 1;
                         send_EDT_init = 1;
 						if (EDT_ARM_ENABLE == 1) {
@@ -239,7 +239,7 @@ __RAMFUNC void computeDshotDMA()
 #endif
 						break;
 					case 14:
-#ifdef K19XXVK035
+#if defined(K19XXVK035) || defined(K19XXVG5T)
 						dshot_extended_telemetry = 0;
                         send_EDT_deinit = 1;
 #endif
@@ -271,7 +271,7 @@ __RAMFUNC void make_dshot_package(uint16_t com_time)
     uint16_t extended_frame_to_send = 0;
     shift_amount = 0;  // Clear shift_amount at start of each packet
 
-#ifdef K19XXVK035 // убирает скачки отображения оборотов
+#if defined(K19XXVK035) || defined(K19XXVG5T) // убирает скачки отображения оборотов
     // For VK035, clear entire GCR buffer at the start to avoid XOR artifacts
     // from previous packets when buffer_padding changes between modes
     for (int i = 0; i < 37; i++) {
@@ -358,7 +358,7 @@ __RAMFUNC void make_dshot_package(uint16_t com_time)
 		<< 5 // 3rd set of four digits
         | gcr_encode_table[(((1 << 4) - 1) & (dshot_full_number >> 0))]; // last four digits
 	// GCR RLL encode 20 to 21bit output
-#ifdef K19XXVK035
+#if defined(K19XXVK035) || defined(K19XXVG5T)
     gcr[1 + buffer_padding] = periodTime;
 
     for (int i = 19; i >= 0; i--)

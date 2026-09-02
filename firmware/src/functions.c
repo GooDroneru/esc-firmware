@@ -60,8 +60,8 @@ static inline uint16_t get_timer_us16(void) {
     return UTILITY_TIMER->cval;
 #elif defined(CH32V203)
     return UTILITY_TIMER->CNT>>1;
-#elif defined(K19XXVK035)
-    return 0;  // K19XXVK035 uses DELAY_TIMER countdown, not a running timer
+#elif defined(K19XXVK035) || defined(K19XXVG5T)
+    return 0;  // K19XX uses DELAY_TIMER countdown, not a running timer
 #else
 #error unsupported MCU
 #endif
@@ -79,6 +79,14 @@ void delayMicros(uint32_t micros)
         asm("nop");
     }
     DELAY_TIMER->CTRL_bit.ON = 0;
+#elif defined(K19XXVG5T)
+    /* TMR3 up-counter clocked by SYSCLK (96 MHz): 96 ticks per us */
+    DELAY_TIMER->COUNT = 0;
+    DELAY_TIMER->PERIOD = micros * CPU_FREQUENCY_MHZ;
+    DELAY_TIMER->CTRL_bit.MODE = TMR_CTRL_MODE_Up;
+    while (DELAY_TIMER->COUNT < DELAY_TIMER->PERIOD) {
+    }
+    DELAY_TIMER->CTRL_bit.MODE = TMR_CTRL_MODE_Stop;
 #else
     const uint16_t cval_start = get_timer_us16();
     while ((uint16_t)(get_timer_us16() - cval_start) < (uint16_t)micros) {

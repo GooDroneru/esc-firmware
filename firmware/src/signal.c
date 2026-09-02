@@ -48,8 +48,8 @@ void computeMSInput()
 
 __RAMFUNC void computeServoInput()
 {   
-#ifdef K19XXVK035
-    uint16_t diffValue = (dma_buffer[1] - dma_buffer[0]) / 100;
+#if defined(K19XXVK035) || defined(K19XXVG5T)
+    uint16_t diffValue = (dma_buffer[1] - dma_buffer[0]) / CPU_FREQUENCY_MHZ;
 #elif defined(CH32V203)
     uint16_t diffValue = (dma_buffer[1] - dma_buffer[0]);
 #endif
@@ -211,7 +211,7 @@ __RAMFUNC void transfercomplete()
 
 void checkDshot()
 {   
-#if defined(K19XXVK035)
+#if defined(K19XXVK035) || defined(K19XXVG5T)
     if ((smallestnumber >= 90) && (smallestnumber < 400) && (average_signal_pulse < 6000)) {
 #elif defined(CH32V203)
     if ((smallestnumber >= 1) && (smallestnumber < 4) && (average_signal_pulse < 60)) {
@@ -229,7 +229,7 @@ void checkDshot()
         buffersize = 32;
         inputSet = 1;
     }
-#if defined(K19XXVK035)
+#if defined(K19XXVK035) || defined(K19XXVG5T)
     if ((smallestnumber >= 10) && (smallestnumber <= 80) && (average_signal_pulse < 1000)) {
 #elif defined(CH32V203)
     if ((smallestnumber >= 4) && (smallestnumber <= 8) && (average_signal_pulse < 100)) {
@@ -250,7 +250,7 @@ void checkDshot()
 }
 void checkServo()
 {
-#ifdef K19XXVK035
+#if defined(K19XXVK035) || defined(K19XXVG5T)
     if (smallestnumber > 2000 && smallestnumber < 210000) {
     buffersize = 4;
 #elif defined(CH32V203)
@@ -265,7 +265,7 @@ void checkServo()
 
 __RAMFUNC void detectInput()
 {   
-#ifdef K19XXVK035
+#if defined(K19XXVK035) || defined(K19XXVG5T)
     smallestnumber = 2000000;
 #elif defined(CH32V203)
     smallestnumber = 20000;

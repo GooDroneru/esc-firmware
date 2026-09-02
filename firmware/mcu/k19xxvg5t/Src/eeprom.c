@@ -1,59 +1,48 @@
 #include "eeprom.h"
 #include "string.h"
-#include "plib035_mflash.h"
+#include "plib5t_flash.h"
 
-#define page_size 0x400                 
+/* K1921VG5T main flash: 512 pages x 1 KB, 8-byte (2 words) programming granule.
+ * Addresses passed in carry the 0x08000000 bus offset — the FLASH controller
+ * ignores ADDR bits 31-19, so they behave exactly like on K1921VK035. */
 
 void save_flash_nolib(uint8_t *data, int length, uint32_t add)
-{   
-    uint32_t start_addr;
-    uint32_t data_to_FLASH[2];
+{
+    uint32_t data_to_FLASH[MEM_FLASH_BUS_WIDTH_WORDS];
+    uint32_t chunk = sizeof(data_to_FLASH);
 
-    if(length < 8) {
-        length = 8;
+    if (length < (int)chunk) {
+        length = chunk;
     }
-    if(length > 1024) {
+    if (length > 1024) {
         length = 1024;
     }
 
-    start_addr = add;
-    MFLASH_ErasePage(start_addr, MFLASH_Region_Main);
+    if (add % MEM_FLASH_PAGE_SIZE == 0) {
+        FLASH_ErasePage(add, FLASH_Region_Main);
+    }
 
-    for(uint32_t i = 0; i < (uint32_t)length; i += 8) {
-        data_to_FLASH[0] = 0xFFFFFFFFu;
-        data_to_FLASH[1] = 0xFFFFFFFFu;
-
-        uint32_t bytes_left = (uint32_t)length - i;
-        uint32_t first_word_bytes = (bytes_left >= 4u) ? 4u : bytes_left;
-        memcpy(&data_to_FLASH[0], &data[i], first_word_bytes);
-
-        if (bytes_left > 4u) {
-            uint32_t second_word_bytes = bytes_left - 4u;
-            if (second_word_bytes > 4u) {
-                second_word_bytes = 4u;
-            }
-            memcpy(&data_to_FLASH[1], &data[i + 4u], second_word_bytes);
+    for (uint32_t i = 0; i < (uint32_t)length; i += chunk) {
+        for (uint32_t w = 0; w < MEM_FLASH_BUS_WIDTH_WORDS; w++) {
+            data_to_FLASH[w] = 0xFFFFFFFFu;
         }
-
-        MFLASH_WriteData(start_addr + i, data_to_FLASH, MFLASH_Region_Main);
+        uint32_t bytes_left = (uint32_t)length - i;
+        for (uint32_t b = 0; b < chunk && b < bytes_left; b++) {
+            ((uint8_t *)data_to_FLASH)[b] = data[i + b];
+        }
+        FLASH_WriteData(add + i, data_to_FLASH, FLASH_Region_Main);
     }
 }
 
 void read_flash_bin(uint8_t* data , uint32_t add , int out_buff_len)
 {
-    uint32_t rawData[2] = {0};
-    uint32_t j = 0;
-    for(uint32_t i = 0; i < out_buff_len; i += 8) {
-        MFLASH_ReadData(add + (j * 8), rawData, MFLASH_Region_Main);
-        if ((i + 0u) < (uint32_t)out_buff_len) data[i + 0u] = (uint8_t)rawData[0];
-        if ((i + 1u) < (uint32_t)out_buff_len) data[i + 1u] = (uint8_t)(rawData[0]>>8);
-        if ((i + 2u) < (uint32_t)out_buff_len) data[i + 2u] = (uint8_t)(rawData[0]>>16);
-        if ((i + 3u) < (uint32_t)out_buff_len) data[i + 3u] = (uint8_t)(rawData[0]>>24);
-        if ((i + 4u) < (uint32_t)out_buff_len) data[i + 4u] = (uint8_t)rawData[1];
-        if ((i + 5u) < (uint32_t)out_buff_len) data[i + 5u] = (uint8_t)(rawData[1]>>8);
-        if ((i + 6u) < (uint32_t)out_buff_len) data[i + 6u] = (uint8_t)(rawData[1]>>16);
-        if ((i + 7u) < (uint32_t)out_buff_len) data[i + 7u] = (uint8_t)(rawData[1]>>24);
-        
-        j++;
+    uint32_t rawData[MEM_FLASH_BUS_WIDTH_WORDS];
+    uint32_t chunk = sizeof(rawData);
+
+    for (uint32_t i = 0; i < (uint32_t)out_buff_len; i += chunk) {
+        FLASH_ReadData(add + i, rawData, FLASH_Region_Main);
+        for (uint32_t b = 0; b < chunk && (uint32_t)out_buff_len > i + b; b++) {
+            data[i + b] = ((uint8_t *)rawData)[b];
+        }
     }
 }

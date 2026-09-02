@@ -67,8 +67,8 @@ void startADCConversion()
 {
     ADC_SEQ_ITConfig(ADC_SEQ_Num_0, 1, DISABLE);
     ADC_SEQ_ITCmd(ADC_SEQ_Num_0, ENABLE);
-    NVIC_EnableIRQ(ADC_SEQ0_IRQn);
-    NVIC_SetPriority(ADC_SEQ0_IRQn, 6);
+    PLIC_SetPriority(IsrVect_IRQ_ADC_SEQ0, 4);
+    PLIC_IntEnable(Plic_Mach_Target, IsrVect_IRQ_ADC_SEQ0);
 }
 
 void ADCInit(void)
@@ -80,7 +80,7 @@ void ADCInit(void)
     RCU->ADCCFG_bit.RSTDIS = 0x1;
 
     ADC->ACTL_bit.ADCEN = 0x1;
-    ADC->EMUX_bit.EM0 = ADC_EMUX_EM0_PWM012A | ADC_EMUX_EM0_SwReq;
+    ADC->EMUX_bit.EM0 = ADC_EMUX_EM0_PWM0A; // SOCA pulse of PWM0 (CTR=0)
     //ADC->SEQSYNC = ADC_SEQSYNC_SYNC0_Msk;
     ADC->SEQ[0].SCCTL_bit.ICNT = 2;
     ADC->SEQ[0].SRQCTL_bit.RQMAX = 0x2;
@@ -95,8 +95,8 @@ void ADCInit(void)
     while (!ADC->ACTL_bit.ADCRDY) {
     };
     ADC->IM_bit.SEQIM0 = 1;
-    NVIC_EnableIRQ(ADC_SEQ0_IRQn);
-    NVIC_SetPriority(ADC_SEQ0_IRQn, 6);
+    PLIC_SetPriority(IsrVect_IRQ_ADC_SEQ0, 4);
+    PLIC_IntEnable(Plic_Mach_Target, IsrVect_IRQ_ADC_SEQ0);
 }
 
 #endif // USE_ADC

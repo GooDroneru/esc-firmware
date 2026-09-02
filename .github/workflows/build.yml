@@ -18,6 +18,8 @@ jobs:
             build_dir: firmware/build-ch32
           - platform: K1921VK035
             build_dir: firmware/build-arm
+          - platform: K1921VG5T
+            build_dir: firmware/build-riscv
 
     steps:
       - name: Checkout firmware
@@ -43,6 +45,45 @@ jobs:
         working-directory: _deps
         run: |
           git lfs pull --include="tools/arm/**"
+
+      # --------------- RISC-V toolchain (xpack riscv-none-elf, native Linux) ---------------
+      # K1921VG5T needs rv32imafdc + ilp32d multilibs (GCC 12+); the GCC 8.2
+      # embed toolchain used for CH32V203 does not provide them.
+      - name: Setup Node.js (for xpm)
+        if: matrix.platform == 'K1921VG5T'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Cache RISC-V (riscv-none-elf) toolchain
+        id: cache-rvelf-toolchain
+        if: matrix.platform == 'K1921VG5T'
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/rvelf
+          key: riscv-none-elf-gcc-14.2.0-linux-x64
+
+      - name: Install RISC-V toolchain via xpm
+        if: matrix.platform == 'K1921VG5T' && steps.cache-rvelf-toolchain.outputs.cache-hit != 'true'
+        run: |
+          if ! command -v xpm >/dev/null 2>&1; then
+            npm install -g xpm@latest
+          fi
+          xpm install --no-save @xpack-dev-tools/riscv-none-elf-gcc@14.2.0-1.1 \
+            --prefix "${{ runner.temp }}/rvelf/xpm"
+
+      - name: Setup RISC-V toolchain env
+        if: matrix.platform == 'K1921VG5T'
+        run: |
+          TOOL_ROOT=$(find "${{ runner.temp }}/rvelf/xpm" -type f -name riscv-none-elf-gcc | head -n1)
+          if [ -z "$TOOL_ROOT" ]; then
+            echo "riscv-none-elf-gcc not found" >&2
+            find "${{ runner.temp }}/rvelf" -maxdepth 6 || true
+            exit 1
+          fi
+          TOOL_DIR=$(dirname "$(dirname "$TOOL_ROOT")")
+          echo "Found riscv-none-elf toolchain: $TOOL_DIR"
+          echo "RISCV_TOOLCHAIN_DIR=$TOOL_DIR" >> $GITHUB_ENV
 
       # CMakeLists.txt expects dependencies to be at ../dependencies relative to
       # the firmware repo (sibling directory). Create a symlink to match that layout.
@@ -171,6 +212,12 @@ jobs:
         with:
           name: firmware-K1921VK035-${{ github.sha }}
           path: artifacts/arm
+
+      - name: Download firmware artifacts (K1921VG5T)
+        uses: actions/download-artifact@v4
+        with:
+          name: firmware-K1921VG5T-${{ github.sha }}
+          path: artifacts/riscv
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
