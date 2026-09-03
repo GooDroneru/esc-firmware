@@ -212,9 +212,12 @@ an settings option)
                                  - Add per target over-ride option to max duty
 cycle change.
                                  - todo fix signal detection
-*2.16    - add L431
-                                 - add variable auto timing
-*/
+ *2.16    - add L431
+                                  - add variable auto timing
+ *2.17    - Improve RPM telemetry accuracy (DShot & serial): compensate the
+            systematic BEMF zero-cross offset so telemetry RPM matches a
+            tachometer (TELEMETRY_ERPM_COMPENSATION_US, see common.h)
+ */
 #include "main.h"
 #include "ADC.h"
 #include "IO.h"
@@ -1640,7 +1643,12 @@ void processDshot() {
     if (e_com_time > 65535) { // beyond dshot range
       make_dshot_package(65535);
     } else {
-      make_dshot_package(e_com_time);
+      uint32_t telem_period =
+          (uint32_t)e_com_time + TELEMETRY_ERPM_COMPENSATION_US;
+      if (telem_period > 65535) {
+        telem_period = 65535; // keep within dshot telemetry range
+      }
+      make_dshot_package((uint16_t)telem_period);
     }
     compute_dshot_flag = 0;
     return;
@@ -2179,7 +2187,10 @@ int main(void) {
     if (send_telemetry) {
 #ifdef USE_SERIAL_TELEMETRY
       makeTelemPackage((int8_t)degrees_celsius, battery_voltage, actual_current,
-                       (uint16_t)(consumed_current >> 16), e_rpm);
+                       (uint16_t)(consumed_current >> 16),
+                       (uint16_t)((uint32_t)e_rpm * e_com_time /
+                                  (uint32_t)(e_com_time +
+                                             TELEMETRY_ERPM_COMPENSATION_US)));
       send_telem_DMA(10);
       send_telemetry = 0;
 #endif

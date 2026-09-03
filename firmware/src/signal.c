@@ -147,7 +147,10 @@ __RAMFUNC void transfercomplete()
 
         if (dshot_telemetry) {
             if (out_put) {
-                make_dshot_package(e_com_time);
+                uint32_t telem_period =
+                    (uint32_t)e_com_time + TELEMETRY_ERPM_COMPENSATION_US;
+                telem_period = telem_period > 65535 ? 65535 : telem_period;
+                make_dshot_package((uint16_t)telem_period);
                 computeDshotDMA();
                 receiveDshotDma();
 	            return;

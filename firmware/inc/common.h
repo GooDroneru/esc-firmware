@@ -9,6 +9,12 @@
 #define __RAMFUNC
 #endif
 
+// Systematic time offset (us) in the ESC's electrical-period measurement
+// (BEMF zero-cross detection). The measured e_com_time is slightly shorter
+// than the true electrical revolution period, so telemetry reads high.
+// Report a corrected period for RPM telemetry only (control path untouched).
+#define TELEMETRY_ERPM_COMPENSATION_US 100
+
 extern EEprom_t eepromBuffer;
 extern uint32_t eeprom_address;
 extern uint16_t TIMER1_MAX_ARR;
