@@ -5202,7 +5202,7 @@
 #ifdef MCU_K19XXVK035
 #define HARDWARE_GROUP_K19XXVK035
 #define K19XXVK035
-#define CPU_FREQUENCY_MHZ        100
+#define CPU_FREQUENCY_MHZ        96
 //#define EEPROM_START_ADD        (uint32_t)0x0000F000
 #define INTERVAL_TIMER           TMR1
 #define INTERVAL_TIMER_EN        TMR1EN
@@ -5248,4 +5248,39 @@
 
 #ifndef POLLING_MODE_THRESHOLD
 #define POLLING_MODE_THRESHOLD 2000
+#endif
+
+/* ---------------------------------------------------------------------------
+ * DShot-based clock calibration & commutation sync (prototype)
+ *
+ * The K1921VK035 uses an internal RC oscillator. Before bootloader calibration
+ * (OSICFG CAL default 544) it can be off by ~10% from ideal; the bootloader
+ * calibration (esc-bootloader/firmware/vk035/bootloader.c) corrects this and
+ * stores the value in flash. Temperature drift afterwards still causes a few %.
+ *
+ * DSHOT_FREQ_LOCK_ENABLE : continuously correct the speed-loop clock using the
+ *                          DShot frame duration as a reference (removes drift).
+ * DSHOT_SYNC_ENABLE      : re-align the commutation phase every N DShot frames.
+ *                          Experimental for sensorless drive.
+ * ---------------------------------------------------------------------------*/
+#ifndef DSHOT_FREQ_LOCK_ENABLE
+#define DSHOT_FREQ_LOCK_ENABLE 1
+#endif
+#ifndef DSHOT_SYNC_ENABLE
+#define DSHOT_SYNC_ENABLE 0
+#endif
+#ifndef DSHOT_SYNC_INTERVAL
+#define DSHOT_SYNC_INTERVAL 120      /* re-align commutation every N DShot frames */
+#endif
+#ifndef DSHOT_FRAME_BITS
+#define DSHOT_FRAME_BITS 16          /* 11 value + telemetry + 4 CRC bits */
+#endif
+/* TMR3/TMR1 clock in MHz (drives both dshot_frametime and e_com_time) */
+#ifndef DSHOT_TIMER_MHZ
+#define DSHOT_TIMER_MHZ (CPU_FREQUENCY_MHZ)
+#endif
+/* Max allowed clock_scale correction in %. From the bootloader calibration the
+ * RC oscillator can be up to ~10% off ideal; allow some margin on top. */
+#ifndef DSHOT_MAX_CLOCK_DEVIATION
+#define DSHOT_MAX_CLOCK_DEVIATION 15
 #endif

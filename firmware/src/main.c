@@ -1504,8 +1504,15 @@ __RAMFUNC void tenKhzRoutine() { // 20khz as of 2.00 to be renamed
         }
       }
       if (use_speed_control_loop && running) {
+#if DSHOT_FREQ_LOCK_ENABLE
+        // correct the clock-drifted measurement back to real-time units
+        int e_com_time_real =
+            (int)(((uint64_t)e_com_time << 16) / clock_scale);
+#else
+        int e_com_time_real = e_com_time;
+#endif
         input_override +=
-            doPidCalculations(&speedPid, e_com_time, target_e_com_time);
+            doPidCalculations(&speedPid, e_com_time_real, target_e_com_time);
         if (input_override > 2047 * 10000) {
           input_override = 2047 * 10000;
         }
@@ -2020,6 +2027,20 @@ int main(void) {
                    commutation_intervals[4] + commutation_intervals[5]) +
                   4) >>
                  1; // COMMUTATION INTERVAL IS 0.5US INCREMENTS
+#if DSHOT_SYNC_ENABLE
+    /* Re-align the commutation phase to the DShot frame boundary every
+     * DSHOT_SYNC_INTERVAL frames. EXPERIMENTAL for sensorless drive: zeroing
+     * the interval timer mid-cycle can briefly perturb the BEMF estimate and
+     * the next zero-cross re-locks. Keep DSHOT_SYNC_ENABLE=0 unless testing. */
+    if (dshot_sync_pending) {
+      dshot_sync_pending = 0;
+      if (running && !stepper_sine) {
+        maskPhaseInterrupts();
+        SET_INTERVAL_TIMER_COUNT(0);
+        enableCompInterrupts();
+      }
+    }
+#endif
 #if defined(FIXED_DUTY_MODE) || defined(FIXED_SPEED_MODE)
     setInput();
 #endif

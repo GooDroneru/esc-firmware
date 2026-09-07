@@ -24,4 +24,8 @@ extern char buffer_divider;
 extern uint8_t last_dshot_command;
 extern volatile uint32_t commutation_interval;
 
+// DShot frequency lock & commutation sync
+extern uint32_t clock_scale;
+extern volatile uint8_t dshot_sync_pending;
+
 // int e_com_time;
