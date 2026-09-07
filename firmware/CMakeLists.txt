@@ -33,7 +33,7 @@ if(MCU_PLATFORM STREQUAL "CH32V203")
     set(CH32_OVERRIDE_SYSTEM ON CACHE BOOL "Use project-local system_ch32v20x.c instead of SDK's" FORCE)
     add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/../../dependencies/ch32sdk ch32sdk)
 elseif(MCU_PLATFORM STREQUAL "K1921VK035")
-    add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/../../dependencies/niietsdk niietsdk)
+    add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/../../dependencies/niietsdk/vk035 vk035sdk)
 endif()
 
 # ---------------------------------------------------------------------------
@@ -78,7 +78,7 @@ if(MCU_PLATFORM STREQUAL "K1921VK035")
 
     target_link_libraries(esc-firmware-niiet
         PRIVATE
-            niietsdk
+            vk035sdk
             K1921VK035
             NANO
             NOSYS

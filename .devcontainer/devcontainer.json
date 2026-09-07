@@ -1,0 +1,48 @@
+{
+    "name": "esc-firmware (K1921VK035 / CH32V203)",
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+    "remoteUser": "vscode",
+    "runArgs": [
+        "--add-host=host.docker.internal:host-gateway",
+        "--privileged"
+    ],
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-vscode.cpptools",
+                "ms-vscode.cpptools-extension-pack",
+                "ms-vscode.cmake-tools",
+                "mcu-debug.debug-tracker-vscode",
+                "marus25.cortex-debug",
+                "zixuanwang.linkerscript",
+                "IBM.output-colorizer"
+            ],
+            "settings": {
+                "cmake.sourceDirectory": "${containerWorkspaceFolder}/firmware",
+                "cmake.configureOnOpen": true,
+                "cmake.useCMakePresets": "always",
+                "cmake.buildBeforeRun": true,
+                "cmake.generator": "Ninja",
+                "editor.formatOnSave": true,
+                "files.associations": {
+                    "*.ld": "linkerscript"
+                },
+                "wch.gdbPath": "/usr/bin/gdb-multiarch",
+                "wch.openocdPath": "/usr/local/bin/openocd-wch",
+                "wch.toolchainPrefix": "riscv64-unknown-elf",
+                "vk035.gdbPath": "/usr/bin/gdb-multiarch",
+                "vk035.openocdPath": "/usr/local/bin/openocd-k1921vk",
+                "vk035.toolchainPrefix": "arm-none-eabi",
+                "vk035.svdFile": "${containerWorkspaceFolder}/../dependencies/niietsdk/vk035/Device/NIIET/K1921VK035/K1921VK035.svd"
+            }
+        }
+    },
+    "mounts": [
+        "source=/dev,target=/dev,type=bind",
+        "source=${localWorkspaceFolder}/../dependencies,target=${containerWorkspaceFolder}/../dependencies,type=bind"
+    ],
+    "forwardPorts": [],
+    "remoteEnv": {}
+}

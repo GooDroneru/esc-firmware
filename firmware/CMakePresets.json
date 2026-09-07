@@ -1,0 +1,82 @@
+{
+    "version": 3,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 21,
+        "patch": 0
+    },
+    "configurePresets": [
+        {
+            "name": "base-release",
+            "hidden": true,
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
+            "name": "base-debug",
+            "hidden": true,
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "plat-ch32v203",
+            "hidden": true,
+            "cacheVariables": {
+                "MCU_PLATFORM": "CH32V203",
+                "CH32_DEVICE": "D6",
+                "CH32_SYSCLK": "SYSCLK_FREQ_96MHz_HSI"
+            }
+        },
+        {
+            "name": "plat-vk035",
+            "hidden": true,
+            "cacheVariables": {
+                "MCU_PLATFORM": "K1921VK035"
+            }
+        },
+        {
+            "name": "ch32v203",
+            "displayName": "WCH CH32V203 (Release)",
+            "inherits": ["plat-ch32v203", "base-release"]
+        },
+        {
+            "name": "ch32v203-debug",
+            "displayName": "WCH CH32V203 (Debug)",
+            "inherits": ["plat-ch32v203", "base-debug"]
+        },
+        {
+            "name": "vk035",
+            "displayName": "NIIET K1921VK035 (Release)",
+            "inherits": ["plat-vk035", "base-release"]
+        },
+        {
+            "name": "vk035-debug",
+            "displayName": "NIIET K1921VK035 (Debug)",
+            "inherits": ["plat-vk035", "base-debug"]
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "ch32v203",
+            "configurePreset": "ch32v203"
+        },
+        {
+            "name": "ch32v203-debug",
+            "configurePreset": "ch32v203-debug"
+        },
+        {
+            "name": "vk035",
+            "configurePreset": "vk035"
+        },
+        {
+            "name": "vk035-debug",
+            "configurePreset": "vk035-debug"
+        }
+    ]
+}
