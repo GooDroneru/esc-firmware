@@ -277,6 +277,12 @@ uint8_t drive_by_rpm = 0;
 uint32_t MAXIMUM_RPM_SPEED_CONTROL = 10000;
 uint32_t MINIMUM_RPM_SPEED_CONTROL = 1000;
 
+// idle current offset (in CURRENT_OFFSET units), factory default until
+// measured once at idle and stored to eeprom
+uint8_t current_offset = CURRENT_OFFSET;
+// one shot: signal detected tune (dshot/servo found)
+uint8_t input_sound_played = 0;
+
 // assign speed control PID values values are x10000
 fastPID speedPid = { // commutation speed loop time
     .Kp = 10,
@@ -598,6 +604,19 @@ void loadEEpromSettings() {
 
   read_flash_bin(eepromBuffer.buffer, eeprom_address,
                  sizeof(eepromBuffer.buffer));
+  {
+    // ---- corrupt / never-initialized eeprom -> morse 12 once, then reboot.
+    // The bootloader stamps bootloader_version on this software reset, so the
+    // next boot normally passes the check. PWM and the delay timer are
+    // already initialized here, morse is safe to play.
+    uint8_t ep_ver = eepromBuffer.eeprom_version;
+    uint8_t bl_ver = eepromBuffer.bootloader_version;
+    if ((ep_ver == 0) || (ep_ver == 0xFF) || (ep_ver > EEPROM_VERSION) ||
+        (bl_ver == 0) || (bl_ver == 0xFF)) {
+      playMorseErrorCode(ESC_ERROR_EEPROM_FAIL);
+      NVIC_SystemReset();
+    }
+  }
   if (eepromBuffer.eeprom_version < 3) { // eeprom versions less than 3 had a
                                          // firmware name string in these bytes
     eepromBuffer.max_ramp = 160;         // 0.1% per ms to 25% per ms
@@ -613,6 +632,14 @@ void loadEEpromSettings() {
     eepromBuffer.drive_by_rpm = 0; // 14
     eepromBuffer.maximum_rpm = 50; // 15  10000 rpm
     eepromBuffer.minimum_rpm = 5;  // 16  1000 rpm
+  }
+  // idle current offset: 0xFF = erased (never calibrated), 0 = legacy dead
+  // field from old firmwares - both get measured once at idle and stored
+  if (eepromBuffer.current_offset == 0xFF || eepromBuffer.current_offset == 0) {
+    eepromBuffer.current_offset = 0xFF; // mark for one-time idle calibration
+    current_offset = CURRENT_OFFSET;    // factory default until then
+  } else {
+    current_offset = eepromBuffer.current_offset;
   }
   if (eepromBuffer.drive_by_rpm >
       1) { // drive_by_rpm is a single 0/1 byte, anything else is invalid
@@ -703,9 +730,8 @@ void loadEEpromSettings() {
     low_cell_volt_cutoff = eepromBuffer.low_cell_volt_cutoff +
                            250; // 2.5 to 3.5 volts per cell range
 
-#ifndef HAS_HALL_SENSORS
-    eepromBuffer.use_hall_sensors = 0;
-#endif
+    // byte 39 (was use_hall_sensors, never supported on these targets) now
+    // holds the calibrated idle current offset - do not zero it here
 
     if (eepromBuffer.sine_mode_changeover_thottle_level < 5 ||
         eepromBuffer.sine_mode_changeover_thottle_level >
@@ -1840,6 +1866,9 @@ int main(void) {
   hardwareVersion_t hardwareInfo;
   read_flash_bin((uint8_t *)(&hardwareInfo), (uint32_t)__device_info_start,
                  sizeof(hardwareInfo));
+  // NOTE: .device_type section is empty in this fork (no device info is
+  // emitted), the read below yields garbage - deadtime defaults are used and
+  // no error is raised.
   if (hardwareInfo.deviceId[4] == '8') // 20R
   {
     deadTime = 40;
@@ -1943,7 +1972,9 @@ int main(void) {
 // #endif
 #ifdef USE_CRSF_INPUT
   inputSet = 1;
+#if ESC_STARTUP_TUNE_ENABLE
   playStartupTune();
+#endif
   MX_IWDG_Init();
   LL_IWDG_ReloadCounter(IWDG);
 #else
@@ -1971,8 +2002,9 @@ int main(void) {
   maskPhaseInterrupts();
   playBrushedStartupTune();
 #else
-
+#if ESC_STARTUP_TUNE_ENABLE
   playStartupTune();
+#endif
 #endif
 #endif
 
@@ -2115,6 +2147,7 @@ int main(void) {
         for (int i = 0; i < 64; i++) {
           dma_buffer[i] = 0;
         }
+        playMorseErrorCode(ESC_ERROR_NO_SIGNAL); // morse 10: no signal
         NVIC_SystemReset();
       }
     }
@@ -2171,6 +2204,29 @@ int main(void) {
       }
     }
 #endif
+
+    // ---- dshot clock calibration failed -> morse 11 spam at idle only,
+    // paused while armed/running so it never blocks the motor
+    if (dshot_calibration_failed && (armed == 0) && (running == 0) &&
+        (play_tone_flag == 0)) {
+      playMorseErrorCode(ESC_ERROR_DSHOT_CAL_FAIL);
+      RELOAD_WATCHDOG_COUNTER();
+      delayMillis(1500);
+    }
+
+    // ---- one shot: input signal detected (dshot/servo) -> short tune
+    if ((inputSet == 1) && (input_sound_played == 0)) {
+      input_sound_played = 1;
+      playInputTune2();
+    }
+
+    // ---- idle current offset: measured once with MOSFETs off, stored to eeprom
+    if ((eepromBuffer.current_offset == 0xFF) && (running == 0) && (input == 0)) {
+      eepromBuffer.current_offset = (smoothed_raw_current * 3300 / 41) / 100;
+      current_offset = eepromBuffer.current_offset;
+      saveEEpromSettings();
+    }
+
     average_interval = e_com_time / 3;
     if (desync_check && zero_crosses > 10) {
       if ((getAbsDif(last_average_interval, average_interval) >
@@ -2246,7 +2302,7 @@ int main(void) {
           (ADC_raw_volts * 3300 / 4095 * VOLTAGE_DIVIDER) / 100)) /* >> 3*/;
       smoothed_raw_current = getSmoothedCurrent();
       actual_current =
-          ((smoothed_raw_current * 3300 / 41) - (CURRENT_OFFSET * 100)) /
+          ((smoothed_raw_current * 3300 / 41) - (current_offset * 100)) /
           (MILLIVOLT_PER_AMP);
       if (actual_current < 0) {
         actual_current = 0;

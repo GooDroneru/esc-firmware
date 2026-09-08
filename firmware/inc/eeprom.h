@@ -11,7 +11,7 @@ typedef union EEprom_u {
   struct {
     uint8_t no_polling_start;   // 0
     uint8_t eeprom_version;     // 1
-    uint8_t bootloader_version; // 2
+    uint8_t bootloader_version; // 2 (owned by the bootloader — do not reuse!)
     struct {
       uint8_t major; // 3
       uint8_t minor; // 4
@@ -54,7 +54,7 @@ typedef union EEprom_u {
     uint8_t low_voltage_cut_off;                // 36
     uint8_t low_cell_volt_cutoff;               // 37
     uint8_t rc_car_reverse;                     // 38
-    uint8_t use_hall_sensors;                   // 39
+    uint8_t current_offset;                     // 39 idle current offset (0xFF = not calibrated)
     uint8_t sine_mode_changeover_thottle_level; // 40
     uint8_t drag_brake_strength;                // 41
     uint8_t driving_brake_strength;             // 42

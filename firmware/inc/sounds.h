@@ -17,6 +17,7 @@ void playBeaconTune3(void);
 void playDuskingTune(void);
 void playDefaultTone(void);
 void playChangedTone(void);
+void playMorseErrorCode(uint8_t code);
 
 void setVolume(uint8_t volume);
 

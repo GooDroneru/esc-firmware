@@ -35,7 +35,11 @@ void initCorePeripherals(void)
 
 void initAfterJump(void)
 {
-    //don't need
+    /* The K19 bootloader jumps here with __disable_irq() (PRIMASK=1) and
+     * SysTick stopped (see esc-bootloader vk035/bootloader.c). Re-enabling
+     * IRQs here is mandatory: the startup tune's __enable_irq() used to be
+     * the only place doing it. */
+    __enable_irq();
 }
 
 void SystemClock_Config(void)

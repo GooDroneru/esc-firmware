@@ -27,5 +27,6 @@ extern volatile uint32_t commutation_interval;
 // DShot frequency lock & commutation sync
 extern uint32_t clock_scale;
 extern volatile uint8_t dshot_sync_pending;
+extern volatile uint8_t dshot_calibration_failed;
 
 // int e_com_time;

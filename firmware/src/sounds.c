@@ -292,3 +292,58 @@ void playBeaconTune3()
     SET_AUTO_RELOAD_PWM(TIMER1_MAX_ARR);
 	__enable_irq();
 }
+
+// ---------------------------------------------------------------------------
+// Morse error codes
+// Digits are 5 elements each, played on one phase at a fixed pitch.
+// ---------------------------------------------------------------------------
+
+#define MORSE_UNIT_MS 60
+
+/* bit4..bit0 = 5 elements in time order, 0 = dot, 1 = dash */
+static const uint8_t morse_digit_pattern[10] = {
+    0b11111, // 0  -----
+    0b01111, // 1  .----
+    0b00111, // 2  ..---
+    0b00011, // 3  ...--
+    0b00001, // 4  ....-
+    0b00000, // 5  .....
+    0b10000, // 6  -....
+    0b11000, // 7  --...
+    0b11100, // 8  ---..
+    0b11110, // 9  ----.
+};
+
+static void morsePlayDigit(uint8_t digit)
+{
+	uint8_t pattern = morse_digit_pattern[digit % 10];
+	for (int i = 4; i >= 0; i--) {
+		RELOAD_WATCHDOG_COUNTER();
+		SET_DUTY_CYCLE_ALL(beep_volume);
+		delayMillis(((pattern >> i) & 1) ? MORSE_UNIT_MS * 3 : MORSE_UNIT_MS);
+		SET_DUTY_CYCLE_ALL(0);
+		delayMillis(MORSE_UNIT_MS); // gap between elements
+	}
+}
+
+/* Plays a two digit error code (e.g. 10 -> "----- .----").
+ * Structured exactly like the other tunes: IRQs masked for the duration
+ * (keeps commutation sources from switching the phases mid-tone), watchdog
+ * reloaded per element. NOTE: signaltimeout is intentionally NOT touched -
+ * resetting it here would stop the no-signal reboot from ever firing while
+ * an error code is being played repeatedly. */
+void playMorseErrorCode(uint8_t code)
+{
+	__disable_irq();
+	SET_AUTO_RELOAD_PWM(TIM1_AUTORELOAD);
+	comStep(3);
+	SET_PRESCALER_PWM(50);
+	setCaptureCompare();
+	morsePlayDigit(code / 10);
+	delayMillis(MORSE_UNIT_MS * 3); // gap between digits
+	morsePlayDigit(code % 10);
+	allOff();
+	SET_PRESCALER_PWM(0);
+	SET_AUTO_RELOAD_PWM(TIMER1_MAX_ARR);
+	__enable_irq();
+}

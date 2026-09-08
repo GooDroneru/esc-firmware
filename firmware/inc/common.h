@@ -15,6 +15,23 @@
 // Report a corrected period for RPM telemetry only (control path untouched).
 #define TELEMETRY_ERPM_COMPENSATION_US 100
 
+// ESC error codes, played as Morse digits at idle (see playMorseErrorCode)
+#define ESC_ERROR_NONE 0
+#define ESC_ERROR_NO_SIGNAL 10      // no input signal detected, rebooting
+#define ESC_ERROR_DSHOT_CAL_FAIL 11 // DShot clock calibration out of range
+#define ESC_ERROR_EEPROM_FAIL 12    // eeprom config / device info read failure
+// 13..14 reserved
+
+// Idle current offset calibration: with MOSFETs off the ESC draws ~50 mA
+// quiescent through the shunt, accept the calibration only if the implied
+// quiescent current is within this window.
+#define CURRENT_CAL_MAX_IDLE_MA 150
+
+/* Startup tune at boot. Kept for reference, disabled by default. */
+#ifndef ESC_STARTUP_TUNE_ENABLE
+#define ESC_STARTUP_TUNE_ENABLE 0
+#endif
+
 extern EEprom_t eepromBuffer;
 extern uint32_t eeprom_address;
 extern uint16_t TIMER1_MAX_ARR;
@@ -77,7 +94,8 @@ extern volatile char input_ready;
 //	int16_t output_limit;
 // }PID;
 
-typedef struct fastPID {
+typedef struct fastPID
+{
   int32_t error;
   uint32_t Kp;
   uint32_t Ki;
@@ -93,7 +111,8 @@ typedef struct fastPID {
 /*
   input signal types
  */
-enum inputType {
+enum inputType
+{
   AUTO_IN = 0,
   DSHOT_IN = 1,
   SERVO_IN = 2,

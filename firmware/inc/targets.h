@@ -5284,3 +5284,8 @@
 #ifndef DSHOT_MAX_CLOCK_DEVIATION
 #define DSHOT_MAX_CLOCK_DEVIATION 15
 #endif
+/* Consecutive out-of-range valid frames before declaring DShot clock
+ * calibration failed (error code 11). ~40-125 ms of DShot at 4-8 kHz. */
+#ifndef DSHOT_CAL_FAIL_FRAMES
+#define DSHOT_CAL_FAIL_FRAMES 500
+#endif

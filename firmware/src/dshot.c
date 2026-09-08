@@ -52,6 +52,7 @@ extern uint8_t max_duty_cycle_change;
 int volatile dshot_full_number;
 extern char play_tone_flag;
 extern char send_esc_info_flag;
+extern uint8_t drive_by_rpm;
 uint8_t command_count = 0;
 uint8_t last_command = 0;
 uint8_t high_pin_count = 0;
@@ -69,8 +70,10 @@ uint16_t bitShift = 8;
 uint32_t clock_scale = 1 << 16; /* Q16 actual/nominal clock ratio */
 volatile uint32_t dshot_frame_ref_filt = 0;
 volatile uint8_t dshot_sync_pending = 0;
+volatile uint8_t dshot_calibration_failed = 0;
 uint16_t dshot_frame_counter = 0;
 static uint32_t dshot_nominal = 0;
+static uint16_t dshot_cal_fail_count = 0;
 
 uint8_t programming_mode;
 uint16_t position;
@@ -137,49 +140,58 @@ __RAMFUNC void computeDshotDMA() {
     if (calcCRC == checkCRC) {
       signaltimeout = 0;
       dshot_goodcounts++;
+      /* DShot clock calibration & commutation sync are only used in
+       * drive_by_rpm mode */
+      if (drive_by_rpm) {
 #if DSHOT_FREQ_LOCK_ENABLE
-      /* Frequency lock: rising edge of bit 0 to rising edge of the last bit =
-       * exactly (DSHOT_FRAME_BITS-1) bit periods — independent of the bit values,
-       * unlike dshot_frametime which includes the last bit's high time. */
-      {
-        uint32_t frame_ref =
-            (uint32_t)(dma_buffer[((DSHOT_FRAME_BITS - 1) << 1)] - dma_buffer[0]);
-        if (dshot_frame_ref_filt == 0) {
-          /* first valid frame: init filter and detect DShot bitrate once */
-          dshot_frame_ref_filt = frame_ref;
-          if (dshot_nominal == 0) {
-            uint32_t ref300 =
-                (uint32_t)((uint64_t)(DSHOT_FRAME_BITS - 1) * 1000000UL *
-                           DSHOT_TIMER_MHZ / 300000UL);
-            uint32_t ref600 =
-                (uint32_t)((uint64_t)(DSHOT_FRAME_BITS - 1) * 1000000UL *
-                           DSHOT_TIMER_MHZ / 600000UL);
-            dshot_nominal = (frame_ref > ((ref300 + ref600) >> 1)) ? ref300
+        /* Frequency lock: rising edge of bit 0 to rising edge of the last bit =
+         * exactly (DSHOT_FRAME_BITS-1) bit periods — independent of the bit values,
+         * unlike dshot_frametime which includes the last bit's high time. */
+        {
+          uint32_t frame_ref =
+              (uint32_t)(dma_buffer[((DSHOT_FRAME_BITS - 1) << 1)] - dma_buffer[0]);
+          if (dshot_frame_ref_filt == 0) {
+            /* first valid frame: init filter and detect DShot bitrate once */
+            dshot_frame_ref_filt = frame_ref;
+            if (dshot_nominal == 0) {
+              uint32_t ref300 =
+                  (uint32_t)((uint64_t)(DSHOT_FRAME_BITS - 1) * 1000000UL *
+                             DSHOT_TIMER_MHZ / 300000UL);
+              uint32_t ref600 =
+                  (uint32_t)((uint64_t)(DSHOT_FRAME_BITS - 1) * 1000000UL *
+                             DSHOT_TIMER_MHZ / 600000UL);
+              dshot_nominal = (frame_ref > ((ref300 + ref600) >> 1)) ? ref300
                                                                     : ref600;
+            }
+          } else {
+            int32_t delta = (int32_t)frame_ref - (int32_t)dshot_frame_ref_filt;
+            dshot_frame_ref_filt += (uint32_t)(delta >> 3);
           }
-        } else {
-          int32_t delta = (int32_t)frame_ref - (int32_t)dshot_frame_ref_filt;
-          dshot_frame_ref_filt += (uint32_t)(delta >> 3);
-        }
 
-        uint32_t raw =
-            (uint32_t)(((uint64_t)dshot_frame_ref_filt << 16) / dshot_nominal);
-        uint32_t max_scale =
-            (uint32_t)((100 + DSHOT_MAX_CLOCK_DEVIATION) * 65536UL / 100);
-        uint32_t min_scale =
-            (uint32_t)((100 - DSHOT_MAX_CLOCK_DEVIATION) * 65536UL / 100);
-        if (raw >= min_scale && raw <= max_scale) {
-          clock_scale = raw;
+          uint32_t raw =
+              (uint32_t)(((uint64_t)dshot_frame_ref_filt << 16) / dshot_nominal);
+          uint32_t max_scale =
+              (uint32_t)((100 + DSHOT_MAX_CLOCK_DEVIATION) * 65536UL / 100);
+          uint32_t min_scale =
+              (uint32_t)((100 - DSHOT_MAX_CLOCK_DEVIATION) * 65536UL / 100);
+          if (raw >= min_scale && raw <= max_scale) {
+            clock_scale = raw;
+            dshot_cal_fail_count = 0;
+          } else if (!dshot_calibration_failed &&
+                     (++dshot_cal_fail_count >= DSHOT_CAL_FAIL_FRAMES)) {
+            /* deviation too large to calibrate -> error code 11 */
+            dshot_calibration_failed = 1;
+          }
         }
-      }
 #endif
 #if DSHOT_SYNC_ENABLE
-      dshot_frame_counter++;
-      if (dshot_frame_counter >= DSHOT_SYNC_INTERVAL) {
-        dshot_frame_counter = 0;
-        dshot_sync_pending = 1;
-      }
+        dshot_frame_counter++;
+        if (dshot_frame_counter >= DSHOT_SYNC_INTERVAL) {
+          dshot_frame_counter = 0;
+          dshot_sync_pending = 1;
+        }
 #endif
+      }
       if (dpulse[11] == 1) {
         send_telemetry = 1;
       }
