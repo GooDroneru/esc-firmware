@@ -32,12 +32,6 @@ jobs:
           lfs: false
           fetch-depth: 1
 
-      - name: Fetch LFS - RISC-V toolchain
-        if: matrix.platform == 'CH32V203'
-        working-directory: _deps
-        run: |
-          git lfs pull --include="tools/risc/riscv-toolchain/**"
-
       - name: Fetch LFS - ARM toolchain
         if: matrix.platform == 'K1921VK035'
         working-directory: _deps
@@ -49,43 +43,15 @@ jobs:
       - name: Symlink dependencies to expected path
         run: ln -s "${GITHUB_WORKSPACE}/_deps" "${GITHUB_WORKSPACE}/../dependencies"
 
-      # --------------- RISC-V toolchain (WCH Windows .exe via Wine) ---------------
-      - name: Install Wine
+      # --------------- RISC-V toolchain (native Linux WCH 8.2.0) ---------------
+      - name: Install native RISC-V toolchain
         if: matrix.platform == 'CH32V203'
         run: |
-          sudo dpkg --add-architecture i386
-          sudo apt-get update -q
-          sudo apt-get install -y wine wine32:i386
-          wine --version
-
-      - name: Setup RISC-V toolchain env (Wine wrappers)
-        if: matrix.platform == 'CH32V203'
-        run: |
-          TOOL_ROOT="${GITHUB_WORKSPACE}/_deps/tools/risc/riscv-toolchain/risc-none-embed-gcc-8.2.0"
-          WRAPPER_DIR="${{ runner.temp }}/riscv-wine/bin"
-          mkdir -p "$WRAPPER_DIR"
-
-          # Create shell wrapper for each .exe
-          for exe in "$TOOL_ROOT/bin/"*.exe; do
-            name=$(basename "${exe%.exe}")
-            echo "#!/bin/sh" > "$WRAPPER_DIR/$name"
-            echo "exec wine \"$exe\" \"\$@\"" >> "$WRAPPER_DIR/$name"
-            chmod +x "$WRAPPER_DIR/$name"
-          done
-
-          # Make .exe files executable so Wine can run them
-          chmod +x "$TOOL_ROOT/bin/"*.exe "$TOOL_ROOT/bin/"*.dll 2>/dev/null || true
-          chmod +x "$TOOL_ROOT/bin/"*.exe
-
-          echo "Created wrappers:"
-          ls "$WRAPPER_DIR"
-          echo "RISCV_TOOLCHAIN_DIR=$TOOL_ROOT" >> $GITHUB_ENV
-          echo "$WRAPPER_DIR" >> $GITHUB_PATH
+          bash "${GITHUB_WORKSPACE}/_deps/tools/risc/install-risc-toolchain-linux.sh"
 
       - name: Debug - RISC-V toolchain
         if: matrix.platform == 'CH32V203'
         run: |
-          echo "RISCV_TOOLCHAIN_DIR=$RISCV_TOOLCHAIN_DIR"
           riscv-none-embed-gcc --version || true
 
       # --------------- ARM toolchain ---------------
@@ -104,40 +70,9 @@ jobs:
       # --------------- Build ---------------
       - name: Configure CMake
         run: |
-          if [ "${{ matrix.platform }}" = "CH32V203" ] && [ -n "${CC:-}" ]; then
-            echo "Using CC from env: $CC"
-            cmake -S firmware -B ${{ matrix.build_dir }} \
-              -DCMAKE_BUILD_TYPE=Release \
-              -DMCU_PLATFORM=${{ matrix.platform }} \
-              -DCMAKE_C_COMPILER="$CC" \
-              -DCMAKE_CXX_COMPILER="$CXX" \
-              -DCMAKE_ASM_COMPILER="$ASM"
-          elif [ "${{ matrix.platform }}" = "CH32V203" ]; then
-            WRAPPER_DIR="${{ runner.temp }}/riscv-wine/bin"
-            GCC_BIN="$WRAPPER_DIR/riscv-none-embed-gcc"
-            GXX_BIN="$WRAPPER_DIR/riscv-none-embed-g++"
-            if [ ! -f "$GCC_BIN" ]; then
-              echo "riscv-none-embed-gcc wrapper not found at $GCC_BIN" >&2
-              exit 1
-            fi
-            echo "Using compiler wrapper: $GCC_BIN"
-            # Pass wrappers via CC/CXX so gcc.cmake does not override them
-            CC="$GCC_BIN" CXX="$GXX_BIN" \
-            cmake -S firmware -B ${{ matrix.build_dir }} \
-              -DCMAKE_BUILD_TYPE=Release \
-              -DMCU_PLATFORM=${{ matrix.platform }} \
-              -DCMAKE_C_COMPILER="$GCC_BIN" \
-              -DCMAKE_CXX_COMPILER="$GXX_BIN" \
-              -DCMAKE_ASM_COMPILER="$GCC_BIN" \
-              -DCMAKE_C_COMPILER_FORCED=TRUE \
-              -DCMAKE_CXX_COMPILER_FORCED=TRUE \
-              -DCMAKE_ASM_COMPILER_FORCED=TRUE \
-              -DRISCV_WRAPPER_DIR="$WRAPPER_DIR"
-          else
-            cmake -S firmware -B ${{ matrix.build_dir }} \
-              -DCMAKE_BUILD_TYPE=Release \
-              -DMCU_PLATFORM=${{ matrix.platform }}
-          fi
+          cmake -S firmware -B ${{ matrix.build_dir }} \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DMCU_PLATFORM=${{ matrix.platform }}
 
       - name: Build
         run: cmake --build ${{ matrix.build_dir }} --parallel $(nproc)

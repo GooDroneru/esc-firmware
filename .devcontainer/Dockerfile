@@ -38,18 +38,12 @@ RUN wget -qO /tmp/openocd-k1921vk.tar.gz \
 # ---------------------------------------------------------------------------
 # ONLY the official WCH riscv-none-embed-gcc 8.2.0 toolchain produces working
 # CH32V203 firmware (generic RISC-V GCC miscompiles the WCH fast-interrupt
-# prologues: the sine start runs, then commutation interrupts die). It is a
-# WINDOWS toolchain, stored in the dependencies repo via LFS and run through
-# Wine - exactly like (.github/workflows/build.yml, "RISC-V toolchain (WCH
-# Windows .exe via Wine)"). The toolchain itself is bind-mounted from
-# ../dependencies (LFS must be checked out on the host), Wine sits here.
-
-# Wine (i386 for the 32-bit WCH toolchain), same as CI
-RUN dpkg --add-architecture i386 && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends \
-        wine wine32:i386 \
-    && rm -rf /var/lib/apt/lists/*
+# prologues: the sine start runs, then commutation interrupts die). The Linux
+# native WCH 8.2.0 toolchain is installed by postCreateCommand via
+# dependencies/tools/risc/install-risc-toolchain-linux.sh (bind-mounted from
+# ../dependencies), which places it in
+# dependencies/tools/risc/riscv-toolchain/risc-none-embed-gcc-8.2.0 where
+# dependencies/cmake/toolchain/wch-none-embed.cmake picks it up.
 
 # OpenOCD for WCH (CH32V203)
 RUN wget -qO /tmp/openocd-wch.tar.gz \

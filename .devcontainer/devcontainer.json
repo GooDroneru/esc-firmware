@@ -44,8 +44,6 @@
         "source=${localWorkspaceFolder}/../dependencies,target=${containerWorkspaceFolder}/../dependencies,type=bind"
     ],
     "forwardPorts": [],
-    "remoteEnv": {
-        "WINEDEBUG": "-all"
-    },
-    "postCreateCommand": "bash /workspaces/esc-firmware/.devcontainer/setup-wine-toolchain.sh"
+    "remoteEnv": {},
+    "postCreateCommand": "bash /workspaces/esc-firmware/../dependencies/tools/risc/install-risc-toolchain-linux.sh"
 }
