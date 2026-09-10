@@ -22,6 +22,27 @@ extern uint16_t ADC_raw_current;
 extern uint16_t ADC_raw_input;
 extern uint16_t ADC_raw_ntc;
 
+#ifdef USE_PA12_ANALOG_MUX
+/* RS2103 analog mux: PA12 = 0 -> current shunt, 1 -> NTC. 1:20 ratio -
+ * twenty current scans, then one temperature scan. The mux level is
+ * switched in the DMA transfer-complete callback, i.e. always before the
+ * next scan starts (RS2103 settles in 50 ns). */
+#define ADCMUX_CURRENT_SCANS 20
+
+static uint8_t admux_level = 0;       // current mux level (0=cur, 1=ntc)
+static uint8_t admux_scan_count = 0;  // current scans since the last NTC scan
+volatile uint8_t admux_temp_slot = 0; // set while the scanned slot is NTC
+
+static void admux_set(uint8_t level)
+{
+    if (level) {
+        GPIOA->BSHR = GPIO_Pin_12;
+    } else {
+        GPIOA->BCR = GPIO_Pin_12;
+    }
+}
+#endif
+
 void ADC_DMA_Callback()
 {  // read dma buffer and set extern variables
 
@@ -32,6 +53,24 @@ void ADC_DMA_Callback()
     ADC_raw_input = ADCDataDMA[0];
 
 #else
+#ifdef USE_PA12_ANALOG_MUX
+    ADC_raw_volts = ADCDataDMA[1]; // PA6 divider input
+    if (admux_level) {
+        ADC_raw_ntc = ADCDataDMA[0]; // NTC through the mux
+    } else {
+        ADC_raw_current = ADCDataDMA[0];
+    }
+    admux_temp_slot = admux_level;
+    // switch the mux level for the NEXT scan
+    admux_scan_count++;
+    if (admux_level) {
+        admux_level = 0; // one NTC scan, back to current
+    } else if (admux_scan_count >= ADCMUX_CURRENT_SCANS) {
+        admux_level = 1;
+        admux_scan_count = 0;
+    }
+    admux_set(admux_level); // settled long before the next conversion
+#else
     ADC_raw_temp =    ADCDataDMA[2];
 #ifdef PA6_VOLTAGE
     ADC_raw_volts = ADCDataDMA[1]; 
@@ -39,6 +78,7 @@ void ADC_DMA_Callback()
 #else
     ADC_raw_volts  = ADCDataDMA[0];
     ADC_raw_ntc = ADCDataDMA[1];
+#endif
 #endif
 #endif
 }
@@ -50,12 +90,21 @@ void ADCInit(void)
     ADC_InitTypeDef ADC_InitStruct = {0};
     GPIO_InitTypeDef GPIO_InitStruct = {0};
 
+#ifdef USE_PA12_ANALOG_MUX
+    // free the debug connector pin PA12 for the mux control: SWJ remapped
+    // off (PA13/PA14 debug unavailable after this, flashing via bootloader)
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
+    GPIO_PinRemapConfig(GPIO_Remap_SWJ_Disable, ENABLE);
+#endif
 
     DMA_InitStructure.DMA_PeripheralBaseAddr = (u32)&ADC1->RDATAR;
     DMA_InitStructure.DMA_MemoryBaseAddr = (u32)&ADCDataDMA[0];
     DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralSRC;
 #ifdef USE_ADC_INPUT
     DMA_InitStructure.DMA_BufferSize = 4;
+#elif defined(USE_PA12_ANALOG_MUX)
+    // [0] = PA1 (common mux input), [1] = PA6 (voltage divider)
+    DMA_InitStructure.DMA_BufferSize = 2;
 #else
     DMA_InitStructure.DMA_BufferSize = 3;
 #endif
@@ -92,6 +141,15 @@ void ADCInit(void)
   GPIO_InitStruct.GPIO_Mode = GPIO_Mode_AIN;
   GPIO_Init(GPIOA, &GPIO_InitStruct);
 
+#ifdef USE_PA12_ANALOG_MUX
+   // mux control PA12: push-pull output, start with current (low)
+   GPIO_InitStruct.GPIO_Pin = GPIO_Pin_12;
+   GPIO_InitStruct.GPIO_Mode = GPIO_Mode_Out_PP;
+   GPIO_InitStruct.GPIO_Speed = GPIO_Speed_10MHz;
+   GPIO_Init(GPIOA, &GPIO_InitStruct);
+   admux_set(0);
+#endif
+
   ADC_DeInit(ADC1);
   ADC_InitStruct.ADC_Mode = ADC_Mode_Independent;
   ADC_InitStruct.ADC_ScanConvMode = ENABLE;
@@ -100,6 +158,8 @@ void ADCInit(void)
   ADC_InitStruct.ADC_DataAlign = ADC_DataAlign_Right;
  #ifdef USE_ADC_INPUT
   ADC_InitStruct.ADC_NbrOfChannel = 4;
+#elif defined(USE_PA12_ANALOG_MUX)
+  ADC_InitStruct.ADC_NbrOfChannel = 2;
  #else
   ADC_InitStruct.ADC_NbrOfChannel = 3;
  #endif
@@ -111,6 +171,10 @@ void ADCInit(void)
   ADC_RegularChannelConfig(ADC1, ADC_Channel_1, 2, ADC_SampleTime_7Cycles5);
   ADC_RegularChannelConfig(ADC1, ADC_Channel_6, 3, ADC_SampleTime_7Cycles5);
   ADC_RegularChannelConfig(ADC1, ADC_Channel_TempSensor, 4, ADC_SampleTime_7Cycles5);
+#elif defined(USE_PA12_ANALOG_MUX)
+  // measurement order: common mux input (PA1), then the voltage divider (PA6)
+   ADC_RegularChannelConfig(ADC1, ADC_Channel_1, 1, ADC_SampleTime_7Cycles5);
+  ADC_RegularChannelConfig(ADC1, ADC_Channel_6, 2, ADC_SampleTime_7Cycles5);
  #else
    ADC_RegularChannelConfig(ADC1, ADC_Channel_1, 1, ADC_SampleTime_7Cycles5);
   ADC_RegularChannelConfig(ADC1, ADC_Channel_6, 2, ADC_SampleTime_7Cycles5);
@@ -131,7 +195,10 @@ void ADCInit(void)
 
 
    ADC_BufferCmd(ADC1, ENABLE);
-   ADC_TempSensorVrefintCmd( ENABLE );
+#ifndef USE_PA12_ANALOG_MUX
+   ADC_TempSensorVrefintCmd( ENABLE ); // internal sensor is only scanned
+                                       // without the analog mux scheme
+#endif
 }
 
 #ifdef USE_NTC

@@ -280,8 +280,6 @@ uint32_t MINIMUM_RPM_SPEED_CONTROL = 1000;
 // idle current offset (in CURRENT_OFFSET units), factory default until
 // measured once at idle and stored to eeprom
 uint8_t current_offset = CURRENT_OFFSET;
-// one shot: signal detected tune (dshot/servo found)
-uint8_t input_sound_played = 0;
 
 // assign speed control PID values values are x10000
 fastPID speedPid = { // commutation speed loop time
@@ -656,6 +654,10 @@ void loadEEpromSettings() {
     eepromBuffer.brake_on_zero_throttle = 0;
   }
   drive_by_rpm = eepromBuffer.drive_by_rpm;
+  // phase-outs cache the comp_pwm setting; 2.3.0 never initialized it from
+  // eeprom, so a board with comp_pwm=1 booted in plain-pwm phasing (motor
+  // barely twitches and does not start). Restore the 2.2.0 semantics.
+  temp_comp_pwm = eepromBuffer.comp_pwm;
   MAXIMUM_RPM_SPEED_CONTROL = eepromBuffer.maximum_rpm * 200;
   MINIMUM_RPM_SPEED_CONTROL = eepromBuffer.minimum_rpm * 200;
   //  eepromBuffer.advance_level can either be set to 0-3 with config tools less
@@ -2214,12 +2216,6 @@ int main(void) {
       delayMillis(1500);
     }
 
-    // ---- one shot: input signal detected (dshot/servo) -> short tune
-    if ((inputSet == 1) && (input_sound_played == 0)) {
-      input_sound_played = 1;
-      playInputTune2();
-    }
-
     // ---- idle current offset: measured once with MOSFETs off, stored to eeprom
     if ((eepromBuffer.current_offset == 0xFF) && (running == 0) && (input == 0)) {
       eepromBuffer.current_offset = (smoothed_raw_current * 3300 / 41) / 100;
@@ -2300,7 +2296,15 @@ int main(void) {
 #endif
       battery_voltage = (/*(7 * battery_voltage) + */ (
           (ADC_raw_volts * 3300 / 4095 * VOLTAGE_DIVIDER) / 100)) /* >> 3*/;
+#ifndef USE_PA12_ANALOG_MUX
       smoothed_raw_current = getSmoothedCurrent();
+#else
+      // NTC tick: do not pollute the current moving average with the muxed
+      // temperature reading, keep the previous smoothed value
+      if (!admux_temp_slot) {
+        smoothed_raw_current = getSmoothedCurrent();
+      }
+#endif
       actual_current =
           ((smoothed_raw_current * 3300 / 41) - (current_offset * 100)) /
           (MILLIVOLT_PER_AMP);

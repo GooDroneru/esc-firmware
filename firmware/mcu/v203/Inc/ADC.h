@@ -17,4 +17,8 @@ void startADCConversion();
 int16_t getConvertedDegrees(uint16_t adcrawtemp);
 int16_t getNTCDegrees(uint16_t ntcrawtemp);
 
+#ifdef USE_PA12_ANALOG_MUX
+extern volatile uint8_t admux_temp_slot; // 1 while the mux slot measured NTC
+#endif
+
 #endif /* ADC_H_ */

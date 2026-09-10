@@ -31,7 +31,7 @@
                 },
                 "wch.gdbPath": "/usr/bin/gdb-multiarch",
                 "wch.openocdPath": "/usr/local/bin/openocd-wch",
-                "wch.toolchainPrefix": "riscv64-unknown-elf",
+                "wch.toolchainPrefix": "riscv-wch-elf",
                 "vk035.gdbPath": "/usr/bin/gdb-multiarch",
                 "vk035.openocdPath": "/usr/local/bin/openocd-k1921vk",
                 "vk035.toolchainPrefix": "arm-none-eabi",

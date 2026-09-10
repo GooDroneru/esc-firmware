@@ -16,7 +16,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpython3.12t64 \
     gcc-arm-none-eabi \
     libnewlib-arm-none-eabi \
-    gcc-riscv64-unknown-elf \
     gdb-multiarch \
     && rm -rf /var/lib/apt/lists/*
 
@@ -37,9 +36,17 @@ RUN wget -qO /tmp/openocd-k1921vk.tar.gz \
 # ---------------------------------------------------------------------------
 # CH32V203 (WCH RISC-V)
 # ---------------------------------------------------------------------------
-# RISC-V GCC comes from apt (gcc-riscv64-unknown-elf 14.2.0); the CMake
-# toolchain picks riscv64-unknown-elf-gcc from PATH. WCH OpenOCD is still
-# downloaded for reliable CH32V203 flashing/debugging.
+# Ubuntu's gcc-riscv64-unknown-elf ships without newlib (no stdio.h), so the
+# CH32V203 build uses the WCH riscv-wch-elf toolchain - same as
+# esc-bootloader's devcontainer. CMake picks riscv-wch-elf-gcc first.
+
+# riscv-wch-elf 12.2.0 — toolchain for CH32V203 (TianpeiLee)
+RUN wget -qO /tmp/wch-riscv.tar.gz \
+        "https://github.com/TianpeiLee/riscv-gun-toolchain-12.2.0-x86_64-linux-riscv-wch-elf/archive/refs/tags/12.2.0.tar.gz" && \
+    mkdir -p /tools/xpack-riscv-none-embed-gcc && \
+    tar -xzf /tmp/wch-riscv.tar.gz --strip-components=1 -C /tools/xpack-riscv-none-embed-gcc && \
+    rm /tmp/wch-riscv.tar.gz && \
+    ln -s /tools/xpack-riscv-none-embed-gcc/bin/riscv-wch-elf-* /usr/local/bin/
 
 # OpenOCD for WCH (CH32V203)
 RUN wget -qO /tmp/openocd-wch.tar.gz \

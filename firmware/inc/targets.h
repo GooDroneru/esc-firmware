@@ -2944,6 +2944,10 @@
 #define USE_NTC
 #define USE_SERIAL_TELEMETRY
 #define PA6_VOLTAGE
+/* RS2103 analog mux, PA1 = common input (mux: 0 = current shunt, 1 = NTC),
+ * PA6 = voltage divider input, PA12 = mux control (ex-SWDIO, SWJ remapped
+ * off below). Measured 1:20: 20 current scans, then one NTC scan. */
+#define PA6_VOLTAGE
 #endif
 
 
@@ -5172,7 +5176,15 @@
 
 #ifdef MCU_CH32V203
 #define CH32V203
+#ifndef NEED_INPUT_READY
 #define NEED_INPUT_READY
+#endif
+/* RS2103 analog mux (AIRBOT_V203): PA1 = common input (mux: 0 = current
+ * shunt, 1 = NTC), PA6 = voltage divider, PA12 = mux control (ex-SWDIO,
+ * SWJ remapped off). Measured 1:20: 20 current scans, one NTC scan.
+ * Defined here in the MCU section so it is set already on the FIRST
+ * targets.h pass - the board blocks further up are dead on that pass. */
+#define USE_PA12_ANALOG_MUX
 #define ERASED_FLASH_BYTE    0x39
 #define CPU_FREQUENCY_MHZ    96                     //PWM freq is 48MHz, CPU freq is 96MHz
 #define EEPROM_START_ADD     (uint32_t)0x0800F000
