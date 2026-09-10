@@ -36,17 +36,20 @@ RUN wget -qO /tmp/openocd-k1921vk.tar.gz \
 # ---------------------------------------------------------------------------
 # CH32V203 (WCH RISC-V)
 # ---------------------------------------------------------------------------
-# Ubuntu's gcc-riscv64-unknown-elf ships without newlib (no stdio.h), so the
-# CH32V203 build uses the WCH riscv-wch-elf toolchain - same as
-# esc-bootloader's devcontainer. CMake picks riscv-wch-elf-gcc first.
+# ONLY the official WCH riscv-none-embed-gcc 8.2.0 toolchain produces working
+# CH32V203 firmware (generic RISC-V GCC miscompiles the WCH fast-interrupt
+# prologues: the sine start runs, then commutation interrupts die). It is a
+# WINDOWS toolchain, stored in the dependencies repo via LFS and run through
+# Wine - exactly like (.github/workflows/build.yml, "RISC-V toolchain (WCH
+# Windows .exe via Wine)"). The toolchain itself is bind-mounted from
+# ../dependencies (LFS must be checked out on the host), Wine sits here.
 
-# riscv-wch-elf 12.2.0 — toolchain for CH32V203 (TianpeiLee)
-RUN wget -qO /tmp/wch-riscv.tar.gz \
-        "https://github.com/TianpeiLee/riscv-gun-toolchain-12.2.0-x86_64-linux-riscv-wch-elf/archive/refs/tags/12.2.0.tar.gz" && \
-    mkdir -p /tools/xpack-riscv-none-embed-gcc && \
-    tar -xzf /tmp/wch-riscv.tar.gz --strip-components=1 -C /tools/xpack-riscv-none-embed-gcc && \
-    rm /tmp/wch-riscv.tar.gz && \
-    ln -s /tools/xpack-riscv-none-embed-gcc/bin/riscv-wch-elf-* /usr/local/bin/
+# Wine (i386 for the 32-bit WCH toolchain), same as CI
+RUN dpkg --add-architecture i386 && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+        wine wine32:i386 \
+    && rm -rf /var/lib/apt/lists/*
 
 # OpenOCD for WCH (CH32V203)
 RUN wget -qO /tmp/openocd-wch.tar.gz \

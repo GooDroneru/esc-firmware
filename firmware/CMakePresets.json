@@ -30,7 +30,11 @@
             "cacheVariables": {
                 "MCU_PLATFORM": "CH32V203",
                 "CH32_DEVICE": "D6",
-                "CH32_SYSCLK": "SYSCLK_FREQ_96MHz_HSI"
+                "CH32_SYSCLK": "SYSCLK_FREQ_96MHz_HSI",
+                "RISCV_WRAPPER_DIR": "/usr/local/bin",
+                "CMAKE_C_COMPILER_FORCED": "TRUE",
+                "CMAKE_CXX_COMPILER_FORCED": "TRUE",
+                "CMAKE_ASM_COMPILER_FORCED": "TRUE"
             }
         },
         {

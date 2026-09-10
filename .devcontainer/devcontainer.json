@@ -31,7 +31,7 @@
                 },
                 "wch.gdbPath": "/usr/bin/gdb-multiarch",
                 "wch.openocdPath": "/usr/local/bin/openocd-wch",
-                "wch.toolchainPrefix": "riscv-wch-elf",
+                "wch.toolchainPrefix": "riscv-none-embed",
                 "vk035.gdbPath": "/usr/bin/gdb-multiarch",
                 "vk035.openocdPath": "/usr/local/bin/openocd-k1921vk",
                 "vk035.toolchainPrefix": "arm-none-eabi",
@@ -44,5 +44,8 @@
         "source=${localWorkspaceFolder}/../dependencies,target=${containerWorkspaceFolder}/../dependencies,type=bind"
     ],
     "forwardPorts": [],
-    "remoteEnv": {}
+    "remoteEnv": {
+        "WINEDEBUG": "-all"
+    },
+    "postCreateCommand": "bash /workspaces/esc-firmware/.devcontainer/setup-wine-toolchain.sh"
 }
