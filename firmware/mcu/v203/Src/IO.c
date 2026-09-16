@@ -13,6 +13,7 @@
 #include "serial_telemetry.h"
 #include "targets.h"
 
+extern uint16_t periodTime; // DShot reply period, set from the DShot speed
 char ic_timer_prescaler = CPU_FREQUENCY_MHZ / 8;
 uint32_t dma_buffer[64] = {0};
 volatile char out_put = 0;
@@ -35,8 +36,11 @@ void changeToOutput() {
   IC_TIMER_REGISTER->CHCTLR1 = 0x60; // oc mode pwm
   IC_TIMER_REGISTER->CCER = 0x3;     // outenable
 
-  IC_TIMER_REGISTER->PSC = output_timer_prescaler;
-  IC_TIMER_REGISTER->ATRLR = 63; // 48MHz / output_timer_prescaler / (63+1)
+  // Reply timer period follows the DShot speed via periodTime, exactly like
+  // K19XXVK035 sets TMR3->LOAD = periodTime. The CH32V203 timer runs at twice
+  // the clock so the period constants/threshold are halved (see dshot.c).
+  IC_TIMER_REGISTER->PSC = 0;
+  IC_TIMER_REGISTER->ATRLR = periodTime - 1;
   out_put = 1;
   TIM_GenerateEvent(IC_TIMER_REGISTER, TIM_EventSource_Update);
 }
