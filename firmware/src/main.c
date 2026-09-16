@@ -1714,7 +1714,16 @@ void processDshot() {
 }
 
 void advanceincrement() {
+#ifdef SINE_DIRECTION_INVERTED
+  // Open-loop sine and closed-loop commutation use opposite conventions:
+  // commutate() advances "step" for forward while advanceincrement() decreases
+  // the angle, so on boards whose phase wiring makes the sine fight the BEMF
+  // commutation the motor reverses once it catches. This flag flips the sine
+  // direction so open loop matches closed loop.
+  if (forward) {
+#else
   if (!forward) {
+#endif
     phase_A_position++;
     if (phase_A_position > 359) {
       phase_A_position = 0;

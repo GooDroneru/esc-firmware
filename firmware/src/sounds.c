@@ -314,15 +314,26 @@ static const uint8_t morse_digit_pattern[10] = {
     0b11110, // 9  ----.
 };
 
+// Delay that keeps feeding the watchdog. On K19XXVK035 the WDT timeout is
+// short (~200 ms at LOAD=200000) so a dash (3*60 ms) plus its gap would trip
+// the WDT and cut the error code mid-way; on CH32V203 the IWDG is ~3.2 s.
+static void morseDelay(uint32_t ms)
+{
+	while (ms-- > 0) {
+		RELOAD_WATCHDOG_COUNTER();
+		delayMicros(1000UL);
+	}
+}
+
 static void morsePlayDigit(uint8_t digit)
 {
 	uint8_t pattern = morse_digit_pattern[digit % 10];
 	for (int i = 4; i >= 0; i--) {
 		RELOAD_WATCHDOG_COUNTER();
 		SET_DUTY_CYCLE_ALL(beep_volume);
-		delayMillis(((pattern >> i) & 1) ? MORSE_UNIT_MS * 3 : MORSE_UNIT_MS);
+		morseDelay(((pattern >> i) & 1) ? MORSE_UNIT_MS * 3 : MORSE_UNIT_MS);
 		SET_DUTY_CYCLE_ALL(0);
-		delayMillis(MORSE_UNIT_MS); // gap between elements
+		morseDelay(MORSE_UNIT_MS); // gap between elements
 	}
 }
 
@@ -340,7 +351,7 @@ void playMorseErrorCode(uint8_t code)
 	SET_PRESCALER_PWM(50);
 	setCaptureCompare();
 	morsePlayDigit(code / 10);
-	delayMillis(MORSE_UNIT_MS * 3); // gap between digits
+	morseDelay(MORSE_UNIT_MS * 3); // gap between digits
 	morsePlayDigit(code % 10);
 	allOff();
 	SET_PRESCALER_PWM(0);

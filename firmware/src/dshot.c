@@ -336,9 +336,10 @@ __RAMFUNC void make_dshot_package(uint16_t com_time) {
   uint16_t extended_frame_to_send = 0;
   shift_amount = 0; // Clear shift_amount at start of each packet
 
-#ifdef K19XXVK035 // убирает скачки отображения оборотов
-  // For VK035, clear entire GCR buffer at the start to avoid XOR artifacts
-  // from previous packets when buffer_padding changes between modes
+#if defined(K19XXVK035) || defined(CH32V203) // убирает скачки отображения оборотов
+  // Clear the entire GCR buffer at the start to avoid XOR artifacts from
+  // previous packets when buffer_padding / periodTime change between modes or
+  // DShot speeds (300 <-> 600).
   for (int i = 0; i < 37; i++) {
     gcr[i] = 0;
   }

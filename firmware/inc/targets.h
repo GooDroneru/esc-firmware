@@ -2953,6 +2953,10 @@
 #define TARGET_VOLTAGE_DIVIDER 159
 #define MILLIVOLT_PER_AMP 15
 #define CURRENT_OFFSET 15
+/* On this board the sine open-loop sequence drives opposite to the BEMF
+ * closed-loop commutation (K19XXVK035 does not need this), so the motor
+ * reverses when it catches. Flip the open-loop direction to match. */
+#define SINE_DIRECTION_INVERTED
 #endif
 
 
