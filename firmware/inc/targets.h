@@ -2948,6 +2948,11 @@
  * PA6 = voltage divider input, PA12 = mux control (ex-SWDIO, SWJ remapped
  * off below). Measured 1:20: 20 current scans, then one NTC scan. */
 #define PA6_VOLTAGE
+/* Same sensing front-end as K19XXVK035: 15k/1k voltage divider and the same
+ * current shunt amplifier gain. */
+#define TARGET_VOLTAGE_DIVIDER 159
+#define MILLIVOLT_PER_AMP 15
+#define CURRENT_OFFSET 15
 #endif
 
 

@@ -116,13 +116,12 @@ __RAMFUNC void computeDshotDMA() {
               IC_TIMER_REGISTER->PRD = periodTime;
             }
 #elif defined(CH32V203)
-            if (halfpulsetime > 0x39) {
-              periodTime = 128;
-              bitShift = 7;
-            } else {
-              periodTime = 64;
-              bitShift = 6;
-            }
+            // The reply timer runs at 64*(output_timer_prescaler+1) ticks
+            // (PSC=output_timer_prescaler, ATRLR=63), so the GCR period/shift
+            // must follow the divider - otherwise slow DShot (300) replies are
+            // garbled while DShot600 happens to work.
+            periodTime = 64 * (output_timer_prescaler + 1);
+            bitShift = 6 + output_timer_prescaler;
 #endif
           }
         }
@@ -439,15 +438,22 @@ __RAMFUNC void make_dshot_package(uint16_t com_time) {
   }
   gcr[buffer_padding] = 0;
 #elif defined(CH32V203)
-  gcr[1 + buffer_padding] = periodTime;
-  for (int i = 19; i >= 0; i--) { // each digit in gcrnumber
-    gcr[buffer_padding + 20 - i + 1] =
-        ((((gcrnumber & 1 << i)) >> i) ^
-         (gcr[buffer_padding + 20 - i] >> bitShift))
-        << bitShift; // exclusive ored with number before it multiplied by 64 to
-                     // match
-                     // output timer.
+  // Derive the GCR reply period from the *current* reply-timer divider so the
+  // encoding always matches the timer (PSC=output_timer_prescaler, ATRLR=63 ->
+  // period 64*(PSC+1)). Doing it here (not only once at detection) keeps it in
+  // sync if the detected DShot speed / prescaler ever changes.
+  {
+    const uint8_t psc = (uint8_t)output_timer_prescaler;
+    const uint8_t bs = 6 + psc; // log2(64*(psc+1))
+    gcr[1 + buffer_padding] = 64 * (psc + 1);
+    for (int i = 19; i >= 0; i--) { // each digit in gcrnumber
+      gcr[buffer_padding + 20 - i + 1] =
+          ((((gcrnumber & 1 << i)) >> i) ^
+           (gcr[buffer_padding + 20 - i] >> bs))
+          << bs; // exclusive ored with number before it multiplied by the reply
+                 // timer period.
+    }
+    gcr[buffer_padding] = 0;
   }
-  gcr[buffer_padding] = 0;
 #endif
 }

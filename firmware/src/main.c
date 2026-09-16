@@ -654,6 +654,28 @@ void loadEEpromSettings() {
     eepromBuffer.brake_on_zero_throttle = 0;
   }
   drive_by_rpm = eepromBuffer.drive_by_rpm;
+  // Boolean settings are single 0/1 bytes. Corrupt or foreign eeproms may hold
+  // arbitrary values there (e.g. a firmware-name character 0xE3): a "truthy"
+  // garbage byte silently enables bidirectional mode / reversing and wrecks
+  // direction, telemetry and dshot - clamp anything that is not 0/1.
+  if (eepromBuffer.dir_reversed > 1) {
+    eepromBuffer.dir_reversed = 0;
+  }
+  if (eepromBuffer.bi_direction > 1) {
+    eepromBuffer.bi_direction = 0;
+  }
+  if (eepromBuffer.use_sine_start > 1) {
+    eepromBuffer.use_sine_start = 0;
+  }
+  if (eepromBuffer.comp_pwm > 1) {
+    eepromBuffer.comp_pwm = 0;
+  }
+  if (eepromBuffer.stuck_rotor_protection > 1) {
+    eepromBuffer.stuck_rotor_protection = 0;
+  }
+  if (eepromBuffer.auto_advance > 1) {
+    eepromBuffer.auto_advance = 0;
+  }
   // phase-outs cache the comp_pwm setting; 2.3.0 never initialized it from
   // eeprom, so a board with comp_pwm=1 booted in plain-pwm phasing (motor
   // barely twitches and does not start). Restore the 2.2.0 semantics.
@@ -1812,7 +1834,8 @@ void runBrushedLoop() {
   brushed_duty_cycle = map(adjusted_input, 48, 2047, 0,
                            (TIMER1_MAX_ARR - (TIMER1_MAX_ARR / 20)));
 
-  if (degrees_celsius > eepromBuffer.limits.temperature) {
+  if ((eepromBuffer.limits.temperature != 255) &&
+      (degrees_celsius > eepromBuffer.limits.temperature)) {
     duty_cycle_maximum =
         map(degrees_celsius, eepromBuffer.limits.temperature,
             eepromBuffer.limits.temperature + 20, TIMER1_MAX_ARR / 2, 1);
@@ -2381,7 +2404,8 @@ int main(void) {
         duty_cycle_maximum = 2000;
       }
 
-      if (degrees_celsius > eepromBuffer.limits.temperature) {
+      if ((eepromBuffer.limits.temperature != 255) &&
+          (degrees_celsius > eepromBuffer.limits.temperature)) {
         duty_cycle_maximum =
             map(degrees_celsius, eepromBuffer.limits.temperature - 10,
                 eepromBuffer.limits.temperature + 10,
